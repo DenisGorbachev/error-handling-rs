@@ -81,10 +81,6 @@ pub enum FindEvenError {
 
 */
 
-mod types;
-
-pub use types::*;
-
 /// [`handle!`](crate::handle) is a better alternative to [`map_err`](Result::map_err) because it doesn't capture any variables from the environment if the result is [`Ok`], only when the result is [`Err`].
 /// By contrast, a closure passed to `map_err` always captures the variables from environment, regardless of whether the result is [`Ok`] or [`Err`]
 /// Use [`handle!`](crate::handle) if you need to pass owned variables to an error variant (which is returned only in case when result is [`Err`])
@@ -100,6 +96,16 @@ macro_rules! handle {
                 source,
                 $($arg$(: $value)?),*
             }),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! handle_direct {
+    ($result:expr, $source:ident, $error:expr) => {
+        match $result {
+            Ok(value) => value,
+            Err($source) => return Err($error),
         }
     };
 }

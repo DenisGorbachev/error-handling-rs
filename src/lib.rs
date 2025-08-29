@@ -112,12 +112,13 @@ macro_rules! handle_direct {
 
 #[macro_export]
 macro_rules! handle_opt {
-    ($var:ident, $option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        let Some($var) = $option else {
-            return Err($variant {
+    ($option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        match $option {
+            Some(value) => value,
+            None => return Err($variant {
                 $($arg$(: $value)?),*
-            });
-        };
+            }),
+        }
     };
 }
 
@@ -130,4 +131,25 @@ macro_rules! handle_bool {
             });
         };
     };
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(dead_code)]
+
+    use super::*;
+    use derive_more::{Display, Error};
+
+    #[test]
+    fn must_handle_opt() {
+        fn find_even(numbers: Vec<u32>) -> Result<u32, FindEvenError> {
+            use FindEvenError::*;
+            let even = handle_opt!(numbers.iter().find(|x| *x % 2 == 0), NotFound);
+            Ok(*even)
+        }
+        #[derive(Error, Display, Debug)]
+        enum FindEvenError {
+            NotFound,
+        }
+    }
 }

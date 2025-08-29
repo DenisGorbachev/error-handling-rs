@@ -1,18 +1,17 @@
 [package]
-name = "rust-pre-public-cli-template"
+name = "error-handling"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85.0"
-description = "A template for creating Rust CLI apps with Clap."
+description = "Error handling best practices"
 license = "Apache-2.0 OR MIT"
-homepage = "https://github.com/DenisGorbachev/rust-cli-app-template"
-repository = "https://github.com/DenisGorbachev/rust-cli-app-template"
-readme = "README.md"
+homepage = "https://github.com/DenisGorbachev/error-handling-rs"
+repository = "https://github.com/DenisGorbachev/error-handling-rs"
 keywords = []
 categories = []
 
 [package.metadata.details]
-title = "Rust CLI app template"
+title = "Error handling best practices"
 tagline = ""
 summary = ""
 announcement = ""

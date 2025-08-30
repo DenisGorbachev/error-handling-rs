@@ -17,6 +17,9 @@ summary = ""
 announcement = ""
 readme = { generate = false }
 
+[package.metadata.docs.rs]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
 [dependencies]
 
 [dev-dependencies]

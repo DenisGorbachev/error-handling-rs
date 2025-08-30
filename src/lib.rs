@@ -24,6 +24,7 @@
 //! * Every call to another fallible function must be wrapped in a unique error enum variant
 //! * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
 //! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
+//! * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
 //!
 //! ## Notes
 //!
@@ -46,14 +47,6 @@
 //! }
 //! ```
 //!
-//! * When calling a fallible function on each element of a collection, it is better to keep all Results instead of short-circuiting on the first error.
-//!
-//!
-//! Keep the Copy types
-//! Keep the relevant vars (passed by reference)
-//! Note that some vars that were received by value may have already been moved into another function to produce another intermediate value; these can't be returned anymore - so we must always return an enum variant because different values will be available at different points
-//! Handling Option types requires another macro (handle_opt!)
-//!
 //! ## Definitions
 //!
 //! ### Fallible expression
@@ -63,6 +56,7 @@
 //! For example:
 //!
 //! ```rust
+//! use std::collections::HashMap;
 //! use error_handling::{handle, handle_bool};
 //! use derive_more::{Error, Display};
 //!
@@ -76,6 +70,13 @@
 //!     let result = find_even(numbers.clone().into_iter());
 //!     let even = result.map_err(|source| FindEven { source })?;
 //!     Ok(even)
+//! }
+//!
+//! pub fn multiply_key(hashmap: HashMap<String, u32>, key: &str) -> Result<u32, MultiplyKeyError> {
+//!     use MultiplyKeyError::*;
+//!     // the following call chain if a fallible expression
+//!     let value = hashmap.get(key).ok_or(KeyNotFound)?;
+//!     Ok(*value * 10)
 //! }
 //!
 //! pub fn find_even(mut numbers: impl Iterator<Item = u32>) -> Result<u32, FindEvenError> {
@@ -93,6 +94,11 @@
 //! #[derive(Error, Display, Debug)]
 //! pub enum FindEvenError {
 //!     NotFound
+//! }
+//!
+//! #[derive(Error, Display, Debug)]
+//! pub enum MultiplyKeyError {
+//!     KeyNotFound
 //! }
 //! ```
 //!

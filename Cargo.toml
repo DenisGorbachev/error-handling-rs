@@ -20,8 +20,16 @@ readme = { generate = false }
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+[package.metadata.rust-analyzer]
+rustc_private = true
+#[lib]
+#crate-type = ["cdylib"]
+
 [dependencies]
+#clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "c950602c01b2a68b7502388d440270d4e3ee64aa" }
+#dylint_linting = "4.1.0"
 
 [dev-dependencies]
 derive_more = { version = "2.0.1", features = ["full"] }
+#dylint_testing = "4.1.0"
 tokio = { version = "1.39.2", features = ["macros", "fs", "net", "rt", "rt-multi-thread"] }

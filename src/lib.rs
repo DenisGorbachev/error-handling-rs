@@ -120,76 +120,46 @@
 //!
 //! * `RestClient` doesn't point to the actual data, it only allows querying it.
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
-//!
 
-/// [`handle!`](crate::handle) is a better alternative to [`map_err`](Result::map_err) because it doesn't capture any variables from the environment if the result is [`Ok`], only when the result is [`Err`].
-/// By contrast, a closure passed to `map_err` always captures the variables from environment, regardless of whether the result is [`Ok`] or [`Err`]
-/// Use [`handle!`](crate::handle) if you need to pass owned variables to an error variant (which is returned only in case when result is [`Err`])
-/// In addition, this macro captures the original error in the `source` variable, and sets it as the `source` key of the error variant
-///
-/// Note: [`handle!`](crate::handle) assumes that your error variant is a struct variant
-#[macro_export]
-macro_rules! handle {
-    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        match $result {
-            Ok(value) => value,
-            Err(source) => return Err($variant {
-                source,
-                $($arg$(: $value)?),*
-            }),
-        }
-    };
-}
+// #![feature(rustc_private)]
+// #![feature(let_chains)]
+// #![warn(unused_extern_crates)]
+//
+// use rustc_lint::LateLintPass;
+//
+// dylint_linting::declare_late_lint! {
+//     /// ### What it does
+//     ///
+//     /// ### Why is this bad?
+//     ///
+//     /// ### Known problems
+//     ///
+//     /// Remove if none.
+//     ///
+//     /// ### Example
+//     ///
+//     /// ```rust
+//     /// // example code where a warning is issued
+//     /// ```
+//     ///
+//     /// Use instead:
+//     ///
+//     /// ```rust
+//     /// // example code that does not raise a warning
+//     /// ```
+//     pub UNIQUE_ERROR_TYPES,
+//     Warn,
+//     "description goes here"
+// }
+//
+// impl<'tcx> LateLintPass<'tcx> for UniqueErrorTypes {
+//     // A list of things you might check can be found here:
+//     // https://doc.rust-lang.org/stable/nightly-rustc/rustc_lint/trait.LateLintPass.html
+// }
+//
+// #[test]
+// fn ui() {
+//     dylint_testing::ui_test(env!("CARGO_PKG_NAME"), "ui");
+// }
 
-#[macro_export]
-macro_rules! handle_direct {
-    ($result:expr, $source:ident, $error:expr) => {
-        match $result {
-            Ok(value) => value,
-            Err($source) => return Err($error),
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! handle_opt {
-    ($option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        match $option {
-            Some(value) => value,
-            None => return Err($variant {
-                $($arg$(: $value)?),*
-            }),
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! handle_bool {
-    ($condition:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        if $condition {
-            return Err($variant {
-                $($arg$(: $value)?),*
-            });
-        };
-    };
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use derive_more::{Display, Error};
-
-    #[test]
-    fn must_handle_opt() {
-        #[allow(dead_code)]
-        fn find_even(numbers: Vec<u32>) -> Result<u32, FindEvenError> {
-            use FindEvenError::*;
-            let even = handle_opt!(numbers.iter().find(|x| *x % 2 == 0), NotFound);
-            Ok(*even)
-        }
-        #[derive(Error, Display, Debug)]
-        enum FindEvenError {
-            NotFound,
-        }
-    }
-}
+mod macros;

@@ -30,6 +30,7 @@
 //!
 //! * The name of the error enum should answer "what" failed, and its variants should answer "why" it failed
 //! * Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed:
+//! * Some public crates export structs that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
 //!
 //! ```rust
 //! fn foo(a: String, b: String) {

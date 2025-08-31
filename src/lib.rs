@@ -30,7 +30,8 @@
 //!
 //! * The name of the error enum should answer "what" failed, and its variants should answer "why" it failed
 //! * Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed:
-//! * Some public crates export structs that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
+//! * Some public crates export types that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
+//! * Some public crates export types that have a `Debug` impl that doesn't explain the error (e.g. `toml_edit::Error` contains the whole TOML document and a span, so the user has to decipher the error by finding the relevant part of the document by the span)
 //!
 //! ```rust
 //! fn foo(a: String, b: String) {

@@ -10,8 +10,8 @@ macro_rules! handle {
         match $result {
             Ok(value) => value,
             Err(source) => return Err($variant {
-                source,
-                $($arg$(: $value)?),*
+                source: source.into(),
+                $($arg: $crate::into!($arg$(: $value)?)),*
             }),
         }
     };
@@ -33,7 +33,7 @@ macro_rules! handle_opt {
         match $option {
             Some(value) => value,
             None => return Err($variant {
-                $($arg$(: $value)?),*
+                $($arg: $crate::into!($arg$(: $value)?)),*
             }),
         }
     };
@@ -44,19 +44,76 @@ macro_rules! handle_bool {
     ($condition:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
         if $condition {
             return Err($variant {
-                $($arg$(: $value)?),*
+                $($arg: $crate::into!($arg$(: $value)?)),*
             });
         };
     };
 }
 
+#[macro_export]
+macro_rules! into {
+    ($arg:ident) => {
+        $arg.into()
+    };
+    ($arg:ident: $value:expr) => {
+        $value.into()
+    };
+}
+
 #[cfg(test)]
 mod tests {
-    use derive_more::{Display, Error};
+    use crate::{Display, Error, PathBufDisplay};
+    use serde::{Deserialize, Serialize};
+    use std::fs::read_to_string;
+    use std::io;
+    use std::path::Path;
     use std::str::FromStr;
 
     #[test]
     fn must_handle_res() {
+        #[allow(dead_code)]
+        fn parse_config(dir: &Path, format: Format) -> Result<Config, ParseConfigError> {
+            use Format::*;
+            use ParseConfigError::*;
+            let path_buf = dir.join("config.json");
+            let contents = handle!(read_to_string(&path_buf), ReadFileFailed, path: path_buf);
+            match format {
+                Json => {
+                    let config = handle!(serde_json::de::from_str(&contents), DeserializeFromJson, path: path_buf, contents);
+                    Ok(config)
+                }
+                Toml => {
+                    let config = handle!(toml::de::from_str(&contents), DeserializeFromToml, path: path_buf, contents);
+                    Ok(config)
+                }
+            }
+        }
+
+        /// Variants don't have the `format` field because every variant already corresponds to a single specific format
+        /// Some variants have the `path` field because the `contents` depends on `path`
+        /// `path` has type `PathBufDisplay` because `PathBuf` doesn't implement `Display`
+        /// Some `source` field types are wrapped in `Box` according to suggestion from `result_large_err` lint
+        #[derive(Error, Display, Debug)]
+        enum ParseConfigError {
+            ReadFileFailed { path: PathBufDisplay, source: io::Error },
+            DeserializeFromJson { path: PathBufDisplay, contents: String, source: Box<serde_json::error::Error> },
+            DeserializeFromToml { path: PathBufDisplay, contents: String, source: Box<toml::de::Error> },
+        }
+
+        #[allow(dead_code)]
+        #[derive(Copy, Clone, Debug)]
+        enum Format {
+            Json,
+            Toml,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug)]
+        struct Config {
+            name: String,
+            timeout: u64,
+            parallel: bool,
+        }
+
         #[allow(dead_code)]
         fn parse_even_number(input: &str) -> Result<u32, ParseEvenNumberError> {
             use ParseEvenNumberError::*;

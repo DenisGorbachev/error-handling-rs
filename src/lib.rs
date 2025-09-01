@@ -16,6 +16,9 @@
 //! * Every error enum variant field must have an owned type (not a reference)
 //! * Every error enum variant must contain one field per owned variable that is relevant to the fallible expression that this variant wraps
 //!   * The relevant variable is a variable whose value determines whether the fallible expression returns an [`Ok`] or an [`Err`]
+//! * Every error enum must have a `#[derive(Error, Display, Debug)]` attribute
+//!   * `use derive_more::Error;`
+//!   * `use fmt_derive::Display;`
 //! * The name of the error type must end with `Error`
 //! * The name of the error type must include the name of the function converted to CamelCase
 //!   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
@@ -26,6 +29,8 @@
 //! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
 //! * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
 //! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
+//! * Every error enum variant must have a `#[display(...)]` attribute
+//! * If the error enum variant has a `source` field, then the first argument of `#[display(...)]` attribute must end with "\n{source}"
 //!
 //! ## Notes
 //!
@@ -33,6 +38,7 @@
 //! * Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed:
 //! * Some public crates export types that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
 //! * Some public crates export types that have a `Debug` impl that doesn't explain the error (e.g. `toml_edit::Error` contains the whole TOML document and a span, so the user has to decipher the error by finding the relevant part of the document by the span)
+//! * Some types don't implement `Display`, but every error enum must implement `Display` (e.g. [`PathBuf`](std::path::PathBuf))
 //!
 //! ```rust
 //! fn foo(a: String, b: String) {
@@ -60,8 +66,7 @@
 //!
 //! ```rust
 //! use std::collections::HashMap;
-//! use error_handling::{handle, handle_bool};
-//! use derive_more::{Error, Display};
+//! use error_handling::{handle, handle_bool, Display, Error};
 //!
 //! pub fn foo(numbers: Vec<u32>) -> Result<u32, FooError> {
 //!     use FooError::*;
@@ -89,7 +94,6 @@
 //!
 //! #[derive(Error, Display, Debug)]
 //! pub enum FooError {
-//!     #[display("Numbers are empty: {numbers:#?}")]
 //!     NumbersAreEmpty { numbers: Vec<u32> },
 //!     FindEven { source: FindEvenError }
 //! }
@@ -165,4 +169,11 @@
 //     dylint_testing::ui_test(env!("CARGO_PKG_NAME"), "ui");
 // }
 
+pub use derive_more::Error;
+pub use fmt_derive::Display;
+
 mod macros;
+
+mod types;
+
+pub use types::*;

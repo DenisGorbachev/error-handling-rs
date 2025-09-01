@@ -26,6 +26,7 @@ derive_more = { version = "2.0.0", features = ["error"] }
 fmt-derive = { version = "0.1.0" }
 
 [dev-dependencies]
+itertools = "0.14.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
 tokio = { version = "1.39.2", features = ["macros", "fs", "net", "rt", "rt-multi-thread"] }

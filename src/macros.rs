@@ -17,6 +17,24 @@ macro_rules! handle {
     };
 }
 
+/// `$results` must be an `impl Iterator<Item = Result<T, E>>`
+#[macro_export]
+macro_rules! handle_many {
+    ($results:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        {
+            let (oks, errors): (Vec<_>, Vec<_>) = itertools::Itertools::partition_result($results);
+            if errors.is_empty() {
+                oks
+            } else {
+                return Err($variant {
+                    sources: errors.into(),
+                    $($arg: $crate::into!($arg$(: $value)?)),*
+                });
+            }
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! handle_direct {
     ($result:expr, $source:ident, $error:expr) => {
@@ -69,76 +87,101 @@ mod tests {
     use std::path::Path;
     use std::str::FromStr;
 
-    #[test]
-    fn must_handle_res() {
-        #[allow(dead_code)]
-        fn parse_config(dir: &Path, format: Format) -> Result<Config, ParseConfigError> {
-            use Format::*;
-            use ParseConfigError::*;
-            let path_buf = dir.join("config.json");
-            let contents = handle!(read_to_string(&path_buf), ReadFileFailed, path: path_buf);
-            match format {
-                Json => {
-                    let config = handle!(serde_json::de::from_str(&contents), DeserializeFromJson, path: path_buf, contents);
-                    Ok(config)
-                }
-                Toml => {
-                    let config = handle!(toml::de::from_str(&contents), DeserializeFromToml, path: path_buf, contents);
-                    Ok(config)
-                }
+    /// This function tests the [`crate::handle!`] macro
+    #[allow(dead_code)]
+    fn parse_config(dir: &Path, format: Format) -> Result<Config, ParseConfigError> {
+        use Format::*;
+        use ParseConfigError::*;
+        let path_buf = dir.join("config.json");
+        let contents = handle!(read_to_string(&path_buf), ReadFileFailed, path: path_buf);
+        match format {
+            Json => {
+                let config = handle!(serde_json::de::from_str(&contents), DeserializeFromJson, path: path_buf, contents);
+                Ok(config)
             }
-        }
-
-        /// Variants don't have the `format` field because every variant already corresponds to a single specific format
-        /// Some variants have the `path` field because the `contents` depends on `path`
-        /// `path` has type `PathBufDisplay` because `PathBuf` doesn't implement `Display`
-        /// Some `source` field types are wrapped in `Box` according to suggestion from `result_large_err` lint
-        #[derive(Error, Display, Debug)]
-        enum ParseConfigError {
-            ReadFileFailed { path: PathBufDisplay, source: io::Error },
-            DeserializeFromJson { path: PathBufDisplay, contents: String, source: Box<serde_json::error::Error> },
-            DeserializeFromToml { path: PathBufDisplay, contents: String, source: Box<toml::de::Error> },
-        }
-
-        #[allow(dead_code)]
-        #[derive(Copy, Clone, Debug)]
-        enum Format {
-            Json,
-            Toml,
-        }
-
-        #[derive(Serialize, Deserialize, Clone, Debug)]
-        struct Config {
-            name: String,
-            timeout: u64,
-            parallel: bool,
-        }
-
-        #[allow(dead_code)]
-        fn parse_even_number(input: &str) -> Result<u32, ParseEvenNumberError> {
-            use ParseEvenNumberError::*;
-            let number = handle!(input.parse::<u32>(), InputParseFailed);
-            handle_bool!(number % 2 != 0, NumberNotEven, number);
-            Ok(number)
-        }
-        #[derive(Error, Display, Debug)]
-        enum ParseEvenNumberError {
-            InputParseFailed { source: <u32 as FromStr>::Err },
-            NumberNotEven { number: u32 },
+            Toml => {
+                let config = handle!(toml::de::from_str(&contents), DeserializeFromToml, path: path_buf, contents);
+                Ok(config)
+            }
         }
     }
 
-    #[test]
-    fn must_handle_opt() {
-        #[allow(dead_code)]
-        fn find_even(numbers: Vec<u32>) -> Result<u32, FindEvenError> {
-            use FindEvenError::*;
-            let even = handle_opt!(numbers.iter().find(|x| *x % 2 == 0), NotFound);
-            Ok(*even)
-        }
-        #[derive(Error, Display, Debug)]
-        enum FindEvenError {
-            NotFound,
-        }
+    /// This function tests the [`crate::handle_opt!`] macro
+    #[allow(dead_code)]
+    fn find_even(numbers: Vec<u32>) -> Result<u32, FindEvenError> {
+        use FindEvenError::*;
+        let even = handle_opt!(numbers.iter().find(|x| *x % 2 == 0), NotFound);
+        Ok(*even)
+    }
+
+    /// This function tests the [`crate::handle_many!`] macro
+    #[allow(dead_code)]
+    fn multiply_evens(numbers: Vec<u32>) -> Result<Vec<u32>, MultiplyEvensError> {
+        use MultiplyEvensError::*;
+        let results = numbers.into_iter().map(|number| {
+            use CheckEvenError::*;
+            if number % 2 == 0 {
+                Ok(number * 10)
+            } else {
+                Err(NumberNotEven {
+                    number,
+                })
+            }
+        });
+        Ok(handle_many!(results, CheckEvensFailed))
+    }
+
+    /// Variants don't have the `format` field because every variant already corresponds to a single specific format
+    /// Some variants have the `path` field because the `contents` depends on `path`
+    /// `path` has type `PathBufDisplay` because `PathBuf` doesn't implement `Display`
+    /// Some `source` field types are wrapped in `Box` according to suggestion from `result_large_err` lint
+    #[derive(Error, Display, Debug)]
+    enum ParseConfigError {
+        ReadFileFailed { path: PathBufDisplay, source: io::Error },
+        DeserializeFromJson { path: PathBufDisplay, contents: String, source: Box<serde_json::error::Error> },
+        DeserializeFromToml { path: PathBufDisplay, contents: String, source: Box<toml::de::Error> },
+    }
+
+    #[allow(dead_code)]
+    #[derive(Copy, Clone, Debug)]
+    enum Format {
+        Json,
+        Toml,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    struct Config {
+        name: String,
+        timeout: u64,
+        parallel: bool,
+    }
+
+    #[allow(dead_code)]
+    fn parse_even_number(input: &str) -> Result<u32, ParseEvenNumberError> {
+        use ParseEvenNumberError::*;
+        let number = handle!(input.parse::<u32>(), InputParseFailed);
+        handle_bool!(number % 2 != 0, NumberNotEven, number);
+        Ok(number)
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum ParseEvenNumberError {
+        InputParseFailed { source: <u32 as FromStr>::Err },
+        NumberNotEven { number: u32 },
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum FindEvenError {
+        NotFound,
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum MultiplyEvensError {
+        CheckEvensFailed { sources: Vec<CheckEvenError> },
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum CheckEvenError {
+        NumberNotEven { number: u32 },
     }
 }

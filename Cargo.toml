@@ -20,22 +20,13 @@ readme = { generate = false }
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
-[package.metadata.rust-analyzer]
-rustc_private = true
-#[lib]
-#crate-type = ["cdylib"]
-
 # NOTE: we must export `derive_more` instead of `derive_more_2` because it generates code that calls `derive_more` exactly
 [dependencies]
-#clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "c950602c01b2a68b7502388d440270d4e3ee64aa" }
-#dylint_linting = "4.1.0"
-
 derive_more = { version = "2.0.0", features = ["error"] }
 fmt-derive = { version = "0.1.0" }
 
 [dev-dependencies]
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
-#dylint_testing = "4.1.0"
 tokio = { version = "1.39.2", features = ["macros", "fs", "net", "rt", "rt-multi-thread"] }
 toml = "0.9.5"

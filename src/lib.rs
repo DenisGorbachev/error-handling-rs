@@ -128,47 +128,6 @@
 //! * `RestClient` doesn't point to the actual data, it only allows querying it.
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
 
-// #![feature(rustc_private)]
-// #![feature(let_chains)]
-// #![warn(unused_extern_crates)]
-//
-// use rustc_lint::LateLintPass;
-//
-// dylint_linting::declare_late_lint! {
-//     /// ### What it does
-//     ///
-//     /// ### Why is this bad?
-//     ///
-//     /// ### Known problems
-//     ///
-//     /// Remove if none.
-//     ///
-//     /// ### Example
-//     ///
-//     /// ```rust
-//     /// // example code where a warning is issued
-//     /// ```
-//     ///
-//     /// Use instead:
-//     ///
-//     /// ```rust
-//     /// // example code that does not raise a warning
-//     /// ```
-//     pub UNIQUE_ERROR_TYPES,
-//     Warn,
-//     "description goes here"
-// }
-//
-// impl<'tcx> LateLintPass<'tcx> for UniqueErrorTypes {
-//     // A list of things you might check can be found here:
-//     // https://doc.rust-lang.org/stable/nightly-rustc/rustc_lint/trait.LateLintPass.html
-// }
-//
-// #[test]
-// fn ui() {
-//     dylint_testing::ui_test(env!("CARGO_PKG_NAME"), "ui");
-// }
-
 pub use derive_more::Error;
 pub use fmt_derive::Display;
 

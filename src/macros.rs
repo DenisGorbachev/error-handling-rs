@@ -35,6 +35,18 @@ macro_rules! handle_many {
     };
 }
 
+/// [`handle_map_err!`](crate::handle_map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare).
+/// Use [`handle`](crate::handle) if the error variant does capture some owned variables.
+#[macro_export]
+macro_rules! handle_map_err {
+    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        $result.map_err(|source| $variant {
+            source: source.into(),
+            $($arg: $crate::into!($arg$(: $value)?)),*
+        })?
+    };
+}
+
 #[macro_export]
 macro_rules! handle_direct {
     ($result:expr, $source:ident, $error:expr) => {
@@ -84,8 +96,28 @@ mod tests {
     use serde::{Deserialize, Serialize};
     use std::fs::read_to_string;
     use std::io;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::str::FromStr;
+
+    #[allow(dead_code)]
+    struct PrintNameCommand {
+        dir: PathBuf,
+        format: Format,
+    }
+
+    #[allow(dead_code)]
+    impl PrintNameCommand {
+        fn run(self) -> Result<(), PrintNameCommandError> {
+            use PrintNameCommandError::*;
+            let Self {
+                dir,
+                format,
+            } = self;
+            let config = handle_map_err!(parse_config(&dir, format), ParseConfigFailed);
+            println!("{}", config.name);
+            Ok(())
+        }
+    }
 
     /// This function tests the [`crate::handle!`] macro
     #[allow(dead_code)]
@@ -129,6 +161,11 @@ mod tests {
             }
         });
         Ok(handle_many!(results, CheckEvensFailed))
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum PrintNameCommandError {
+        ParseConfigFailed { source: ParseConfigError },
     }
 
     /// Variants don't have the `format` field because every variant already corresponds to a single specific format

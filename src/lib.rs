@@ -39,6 +39,10 @@
 //! * Some public crates export types that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
 //! * Some public crates export types that have a `Debug` impl that doesn't explain the error (e.g. `toml_edit::Error` contains the whole TOML document and a span, so the user has to decipher the error by finding the relevant part of the document by the span)
 //! * Some types don't implement `Display`, but every error enum must implement `Display` (e.g. [`PathBuf`](std::path::PathBuf))
+//! * `derive_more` and `fmt-derive` export derive macros which generate code which references these specific crates (so re-exporting the macros from this crate doesn't work out of the box)
+//!   * Solutions
+//!     * Write our own `Error` and `Display` macros
+//!       * Implement a `Display` macro that defaults to "pretty" debug formatting
 //!
 //! ```rust
 //! fn foo(a: String, b: String) {

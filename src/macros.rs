@@ -35,7 +35,8 @@ macro_rules! handle_many {
     };
 }
 
-/// [`handle_map_err!`](crate::handle_map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare).
+/// [`handle_map_err!`](crate::handle_map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare), or exactly at the end of the block (in the position of returned expression).
+///
 /// Use [`handle`](crate::handle) if the error variant does capture some owned variables.
 #[macro_export]
 macro_rules! handle_map_err {
@@ -44,6 +45,21 @@ macro_rules! handle_map_err {
             source: source.into(),
             $($arg: $crate::into!($arg$(: $value)?)),*
         })?
+    };
+}
+
+/// [`handle_final!`](crate::handle_final) should be used only at the end of the block (in the position of returned expression).
+///
+/// Use [`handle`](crate::handle) in the middle of the block.
+///
+/// [`handle_final!`](crate::handle_final) is different from [`handle_map_err!`](crate::handle_map_err) in that it doesn't apply the `?` operator to the resulting expression (it returns a `Result<T, E>`, not just `T`)
+#[macro_export]
+macro_rules! handle_final {
+    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        $result.map_err(|source| $variant {
+            source: source.into(),
+            $($arg: $crate::into!($arg$(: $value)?)),*
+        })
     };
 }
 

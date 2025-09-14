@@ -35,6 +35,27 @@ macro_rules! handle_iter {
     };
 }
 
+#[macro_export]
+macro_rules! handle_iter_indexed {
+    ($results:expr, $data:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        {
+            let (oks, errors): (Vec<_>, Vec<_>) = itertools::Itertools::partition_result($results);
+            if errors.is_empty() {
+                oks
+            } else {
+                let errors: Vec<_> = errors.into_iter().map(|(index, source)| $crate::ItemError {
+                    item: $data[index],
+                    source
+                }).collect();
+                return Err($variant {
+                    sources: errors.into(),
+                    $($arg: $crate::into!($arg$(: $value)?)),*
+                });
+            }
+        }
+    };
+}
+
 /// `$results` must be an `impl IntoIterator<Item = Result<T, E>>`
 #[macro_export]
 macro_rules! handle_into_iter {
@@ -211,8 +232,7 @@ mod tests {
         use ReadFilesError::*;
         let results = paths
             .into_iter()
-            .enumerate()
-            .map(index_err_async!(check_file))
+            .map(check_file)
             .collect::<JoinSet<_>>()
             .join_all()
             .await;
@@ -287,7 +307,7 @@ mod tests {
 
     #[derive(Error, Display, Debug)]
     enum ReadFilesError {
-        CheckFileFailed { sources: Vec<(usize, CheckFileError)> },
+        CheckFileFailed { sources: Vec<CheckFileError> },
     }
 
     #[derive(Error, Display, Debug)]
@@ -297,14 +317,14 @@ mod tests {
 
     async fn check_file(path: PathBuf) -> Result<String, CheckFileError> {
         use CheckFileError::*;
-        let content = handle!(read_to_string(&path).await, ReadToStringFailed);
-        handle_bool!(content.is_empty(), FileIsEmpty);
+        let content = handle!(read_to_string(&path).await, ReadToStringFailed, path);
+        handle_bool!(content.is_empty(), FileIsEmpty, path);
         Ok(content)
     }
 
     #[derive(Error, Display, Debug)]
     enum CheckFileError {
-        ReadToStringFailed { source: io::Error },
-        FileIsEmpty,
+        ReadToStringFailed { path: PathBuf, source: io::Error },
+        FileIsEmpty { path: PathBuf },
     }
 }

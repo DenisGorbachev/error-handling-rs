@@ -35,17 +35,38 @@ macro_rules! handle_iter {
     };
 }
 
+/// Note that this macro returns an expression that evaluates to a tuple of `(outputs, items)`. This is necessary because the iteration consumes items, which might actually be relevant to the subsequent code
+/// If the errors are empty, then `items.len() == outputs.len()`
+/// Note that the `results` iterator might abort early without consuming all items. In this case, the `items` will contain less elements than prior to this macro invocation
 #[macro_export]
 macro_rules! handle_iter_of_refs {
     ($results:expr, $items:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
         {
-            let results = std::iter::zip($results, $items).map(|(result, item)| {
-                result.map_err(|source| $crate::ItemError {
-                    item,
-                    source,
-                })
-            });
-            $crate::handle_iter!(results, $variant $(, $arg$(: $value)?)*)
+            let mut outputs = Vec::new();
+            let mut items = Vec::new();
+            let mut errors = Vec::new();
+            for (result, item) in std::iter::zip($results, $items) {
+                match result {
+                    Ok(output) => {
+                        outputs.push(output);
+                        items.push(item);
+                    },
+                    Err(source) => {
+                        errors.push($crate::ItemError {
+                            item,
+                            source,
+                        });
+                    }
+                }
+            }
+            if errors.is_empty() {
+                (outputs, items)
+            } else {
+                return Err($variant {
+                    sources: errors.into(),
+                    $($arg: $crate::into!($arg$(: $value)?)),*
+                });
+            }
         }
     };
 }
@@ -236,7 +257,8 @@ mod tests {
         use ReadFilesRefError::*;
         let iter = paths.iter().map(check_file_ref);
         let results = join_all(iter).await;
-        Ok(handle_iter_of_refs!(results.into_iter(), paths, CheckFileRefFailed))
+        let (outputs, _paths) = handle_iter_of_refs!(results.into_iter(), paths, CheckFileRefFailed);
+        Ok(outputs)
     }
 
     // async fn check_file(path: &Path)

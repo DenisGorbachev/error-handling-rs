@@ -117,6 +117,20 @@ macro_rules! into {
     };
 }
 
+#[macro_export]
+macro_rules! index_err {
+    ($f:expr) => {
+        |(index, item)| $f(item).map_err(|err| (index, err))
+    };
+}
+
+#[macro_export]
+macro_rules! index_err_async {
+    ($f:expr) => {
+        async |(index, item)| $f(item).await.map_err(|err| (index, err))
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{Display, Error, PathBufDisplay};
@@ -198,12 +212,7 @@ mod tests {
         let results = paths
             .into_iter()
             .enumerate()
-            .map(async |(index, path)| {
-                use CheckFileError::*;
-                let content = handle!(read_to_string(&path).await, ReadToStringFailed, index);
-                handle_bool!(content.is_empty(), FileIsEmpty, index);
-                Ok(content)
-            })
+            .map(index_err_async!(check_file))
             .collect::<JoinSet<_>>()
             .join_all()
             .await;
@@ -278,7 +287,7 @@ mod tests {
 
     #[derive(Error, Display, Debug)]
     enum ReadFilesError {
-        CheckFileFailed { sources: Vec<CheckFileError> },
+        CheckFileFailed { sources: Vec<(usize, CheckFileError)> },
     }
 
     #[derive(Error, Display, Debug)]
@@ -286,9 +295,16 @@ mod tests {
         NumberNotEven { number: u32 },
     }
 
+    async fn check_file(path: PathBuf) -> Result<String, CheckFileError> {
+        use CheckFileError::*;
+        let content = handle!(read_to_string(&path).await, ReadToStringFailed);
+        handle_bool!(content.is_empty(), FileIsEmpty);
+        Ok(content)
+    }
+
     #[derive(Error, Display, Debug)]
     enum CheckFileError {
-        ReadToStringFailed { index: usize, source: io::Error },
-        FileIsEmpty { index: usize },
+        ReadToStringFailed { source: io::Error },
+        FileIsEmpty,
     }
 }

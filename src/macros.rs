@@ -19,7 +19,7 @@ macro_rules! handle {
 
 /// `$results` must be an `impl Iterator<Item = Result<T, E>>`
 #[macro_export]
-macro_rules! handle_many {
+macro_rules! handle_iter {
     ($results:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
         {
             let (oks, errors): (Vec<_>, Vec<_>) = itertools::Itertools::partition_result($results);
@@ -32,6 +32,17 @@ macro_rules! handle_many {
                 });
             }
         }
+    };
+}
+
+/// `$results` must be an `impl IntoIterator<Item = Result<T, E>>`
+#[macro_export]
+macro_rules! handle_into_iter {
+    ($results:expr, $variant:ident) => {
+        $crate::handle_iter!($results.into_iter(), $variant)
+    };
+    ($results:expr, $variant:ident, $($arg:ident$(: $value:expr)?),*) => {
+        $crate::handle_iter!($results.into_iter(), $variant, $($arg$(: $value)?),*)
     };
 }
 
@@ -110,10 +121,11 @@ macro_rules! into {
 mod tests {
     use crate::{Display, Error, PathBufDisplay};
     use serde::{Deserialize, Serialize};
-    use std::fs::read_to_string;
     use std::io;
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
+    use tokio::fs::read_to_string;
+    use tokio::task::JoinSet;
 
     #[allow(dead_code)]
     struct PrintNameCommand {
@@ -123,13 +135,13 @@ mod tests {
 
     #[allow(dead_code)]
     impl PrintNameCommand {
-        fn run(self) -> Result<(), PrintNameCommandError> {
+        async fn run(self) -> Result<(), PrintNameCommandError> {
             use PrintNameCommandError::*;
             let Self {
                 dir,
                 format,
             } = self;
-            let config = handle_map_err!(parse_config(&dir, format), ParseConfigFailed);
+            let config = handle_map_err!(parse_config(&dir, format).await, ParseConfigFailed);
             println!("{}", config.name);
             Ok(())
         }
@@ -137,11 +149,11 @@ mod tests {
 
     /// This function tests the [`crate::handle!`] macro
     #[allow(dead_code)]
-    fn parse_config(dir: &Path, format: Format) -> Result<Config, ParseConfigError> {
+    async fn parse_config(dir: &Path, format: Format) -> Result<Config, ParseConfigError> {
         use Format::*;
         use ParseConfigError::*;
         let path_buf = dir.join("config.json");
-        let contents = handle!(read_to_string(&path_buf), ReadFileFailed, path: path_buf);
+        let contents = handle!(read_to_string(&path_buf).await, ReadFileFailed, path: path_buf);
         match format {
             Json => {
                 let config = handle!(serde_json::de::from_str(&contents), DeserializeFromJson, path: path_buf, contents);
@@ -162,7 +174,7 @@ mod tests {
         Ok(*even)
     }
 
-    /// This function tests the [`crate::handle_many!`] macro
+    /// This function tests the [`crate::handle_iter!`] macro
     #[allow(dead_code)]
     fn multiply_evens(numbers: Vec<u32>) -> Result<Vec<u32>, MultiplyEvensError> {
         use MultiplyEvensError::*;
@@ -176,7 +188,34 @@ mod tests {
                 })
             }
         });
-        Ok(handle_many!(results, CheckEvensFailed))
+        Ok(handle_iter!(results, CheckEvensFailed))
+    }
+
+    /// This function tests the [`crate::handle_into_iter!`] macro
+    #[allow(dead_code)]
+    async fn read_files(paths: Vec<PathBuf>) -> Result<Vec<String>, ReadFilesError> {
+        use ReadFilesError::*;
+        let results = paths
+            .into_iter()
+            .enumerate()
+            .map(async |(index, path)| {
+                use CheckFileError::*;
+                let content = handle!(read_to_string(&path).await, ReadToStringFailed, index);
+                handle_bool!(content.is_empty(), FileIsEmpty, index);
+                Ok(content)
+            })
+            .collect::<JoinSet<_>>()
+            .join_all()
+            .await;
+        Ok(handle_into_iter!(results, CheckFileFailed))
+    }
+
+    // async fn check_file(path: &Path)
+
+    /// This function exists to test error handling in async code
+    #[allow(dead_code)]
+    async fn process(number: u32) -> Result<u32, ProcessError> {
+        Ok(number)
     }
 
     #[derive(Error, Display, Debug)]
@@ -194,6 +233,10 @@ mod tests {
         DeserializeFromJson { path: PathBufDisplay, contents: String, source: Box<serde_json::error::Error> },
         DeserializeFromToml { path: PathBufDisplay, contents: String, source: Box<toml::de::Error> },
     }
+
+    #[allow(dead_code)]
+    #[derive(Error, Display, Debug)]
+    enum ProcessError {}
 
     #[allow(dead_code)]
     #[derive(Copy, Clone, Debug)]
@@ -234,7 +277,18 @@ mod tests {
     }
 
     #[derive(Error, Display, Debug)]
+    enum ReadFilesError {
+        CheckFileFailed { sources: Vec<CheckFileError> },
+    }
+
+    #[derive(Error, Display, Debug)]
     enum CheckEvenError {
         NumberNotEven { number: u32 },
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum CheckFileError {
+        ReadToStringFailed { index: usize, source: io::Error },
+        FileIsEmpty { index: usize },
     }
 }

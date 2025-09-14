@@ -44,6 +44,23 @@
 //!   * Solutions
 //!     * Write our own `Error` and `Display` macros
 //!       * Implement a `Display` macro that defaults to "pretty" debug formatting
+//! * Some errors must be handled in closures that are passed as arguments to `Iterator::map`
+//!   * Such closures receive a reference to the current item, not an owned item, even if the outer function owns the iterator
+//!   * Such closures should return an error that contains the information about the current item
+//!     * Options
+//!       * Index
+//!         * This approach uses less memory and doesn't rely on the type implementing `Clone`, but requires more code
+//!       * Clone
+//!         * Properties
+//!           * Requires the type to implement `Clone`
+//!       * Ref
+//!         * Conclusion: strictly worse than Clone
+//!         * Pattern
+//!           * Two errors: ClosureRefError<'a> and ClosureError, `impl<'a> From<ClosureRefError<'a>> for ClosureError`
+//!         * Properties
+//!           * Requires the type to implement `Clone`, because we can't extract the owned data from the iterator source just by reference (only if we compare the raw pointers, but that would require iterating over the data source the same numbers of times as there are errors)
+//!       * Require using iterators that own the current item
+//!         * Conclusion: can't work because some iterators will be created by external crates, so we can't enforce that `Iterator::Item` is owned
 //!
 //! ```rust
 //! fn foo(a: String, b: String) {

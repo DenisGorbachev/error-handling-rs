@@ -36,22 +36,16 @@ macro_rules! handle_iter {
 }
 
 #[macro_export]
-macro_rules! handle_iter_indexed {
-    ($results:expr, $data:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+macro_rules! handle_iter_of_refs {
+    ($results:expr, $items:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
         {
-            let (oks, errors): (Vec<_>, Vec<_>) = itertools::Itertools::partition_result($results);
-            if errors.is_empty() {
-                oks
-            } else {
-                let errors: Vec<_> = errors.into_iter().map(|(index, source)| $crate::ItemError {
-                    item: $data[index],
-                    source
-                }).collect();
-                return Err($variant {
-                    sources: errors.into(),
-                    $($arg: $crate::into!($arg$(: $value)?)),*
-                });
-            }
+            let results = std::iter::zip($results, $items).map(|(result, item)| {
+                result.map_err(|source| $crate::ItemError {
+                    item,
+                    source,
+                })
+            });
+            $crate::handle_iter!(results, $variant $(, $arg$(: $value)?)*)
         }
     };
 }
@@ -59,11 +53,8 @@ macro_rules! handle_iter_indexed {
 /// `$results` must be an `impl IntoIterator<Item = Result<T, E>>`
 #[macro_export]
 macro_rules! handle_into_iter {
-    ($results:expr, $variant:ident) => {
-        $crate::handle_iter!($results.into_iter(), $variant)
-    };
-    ($results:expr, $variant:ident, $($arg:ident$(: $value:expr)?),*) => {
-        $crate::handle_iter!($results.into_iter(), $variant, $($arg$(: $value)?),*)
+    ($results:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
+        $crate::handle_iter!($results.into_iter(), $variant $(, $arg$(: $value)?),*)
     };
 }
 
@@ -140,21 +131,22 @@ macro_rules! into {
 
 #[macro_export]
 macro_rules! index_err {
-    ($f:expr) => {
+    ($f:ident) => {
         |(index, item)| $f(item).map_err(|err| (index, err))
     };
 }
 
 #[macro_export]
 macro_rules! index_err_async {
-    ($f:expr) => {
+    ($f:ident) => {
         async |(index, item)| $f(item).await.map_err(|err| (index, err))
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Display, Error, PathBufDisplay};
+    use crate::{Display, Error, ItemError, PathBufDisplay};
+    use futures::future::join_all;
     use serde::{Deserialize, Serialize};
     use std::io;
     use std::path::{Path, PathBuf};
@@ -239,6 +231,14 @@ mod tests {
         Ok(handle_into_iter!(results, CheckFileFailed))
     }
 
+    #[allow(dead_code)]
+    async fn read_files_ref(paths: Vec<PathBuf>) -> Result<Vec<String>, ReadFilesRefError> {
+        use ReadFilesRefError::*;
+        let iter = paths.iter().map(check_file_ref);
+        let results = join_all(iter).await;
+        Ok(handle_iter_of_refs!(results.into_iter(), paths, CheckFileRefFailed))
+    }
+
     // async fn check_file(path: &Path)
 
     /// This function exists to test error handling in async code
@@ -311,6 +311,11 @@ mod tests {
     }
 
     #[derive(Error, Display, Debug)]
+    enum ReadFilesRefError {
+        CheckFileRefFailed { sources: Vec<ItemError<PathBuf, CheckFileRefError>> },
+    }
+
+    #[derive(Error, Display, Debug)]
     enum CheckEvenError {
         NumberNotEven { number: u32 },
     }
@@ -326,5 +331,18 @@ mod tests {
     enum CheckFileError {
         ReadToStringFailed { path: PathBuf, source: io::Error },
         FileIsEmpty { path: PathBuf },
+    }
+
+    async fn check_file_ref(path: &PathBuf) -> Result<String, CheckFileRefError> {
+        use CheckFileRefError::*;
+        let content = handle!(read_to_string(&path).await, ReadToStringFailed);
+        handle_bool!(content.is_empty(), FileIsEmpty);
+        Ok(content)
+    }
+
+    #[derive(Error, Display, Debug)]
+    enum CheckFileRefError {
+        ReadToStringFailed { source: io::Error },
+        FileIsEmpty,
     }
 }

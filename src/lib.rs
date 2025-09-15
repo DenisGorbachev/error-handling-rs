@@ -31,6 +31,7 @@
 //! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
 //! * Every error enum variant must have a `#[display(...)]` attribute
 //! * If the error enum variant has a `source` field, then the first argument of `#[display(...)]` attribute must end with "\n{source}"
+//! * If the error enum variant has a `source` field, then this field must be the first field
 //! * If the error type is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
 //!
 //! ## Notes

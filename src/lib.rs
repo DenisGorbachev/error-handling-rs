@@ -19,11 +19,13 @@
 //! * Every error enum must have a `#[derive(Error, Display, Debug)]` attribute
 //!   * `use derive_more::Error;`
 //!   * `use fmt_derive::Display;`
-//! * The name of the error type must end with `Error`
-//! * The name of the error type must include the name of the function converted to CamelCase
+//! * Every error enum should be located below the function that returns it (in the same file)
+//! * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
+//! * The name of the error enum must include the name of the function converted to CamelCase
 //!   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
 //!   * If the function is an associated function, the name of the error type must be exactly equal to the name of the type without generics concatenated with the name of the function in CamelCase concatenated with `Error`
 //!   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
+//! * The name of the error enum variant should end with `Failed` (for example: `ReadFileFailed`)
 //! * Every call to another fallible function must be wrapped in a unique error enum variant
 //! * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
 //! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
@@ -33,51 +35,12 @@
 //! * If the error enum variant has a `source` field, then the first argument of `#[display(...)]` attribute must end with "\n{source}"
 //! * If the error enum variant has a `source` field, then this field must be the first field
 //! * If the error type is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
-//!
-//! ## Notes
-//!
-//! * The name of the error enum should answer "what" failed, and its variants should answer "why" it failed
-//! * Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed:
-//! * Some public crates export types that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
-//! * Some public crates export types that have a `Debug` impl that doesn't explain the error (e.g. `toml_edit::Error` contains the whole TOML document and a span, so the user has to decipher the error by finding the relevant part of the document by the span)
-//! * Some types don't implement `Display`, but every error enum must implement `Display` (e.g. [`PathBuf`](std::path::PathBuf))
-//! * `derive_more` and `fmt-derive` export derive macros which generate code which references these specific crates (so re-exporting the macros from this crate doesn't work out of the box)
-//!   * Solutions
-//!     * Write our own `Error` and `Display` macros
-//!       * Implement a `Display` macro that defaults to "pretty" debug formatting
-//! * Some errors must be handled in closures that are passed as arguments to `Iterator::map`
-//!   * Such closures receive a reference to the current item, not an owned item, even if the outer function owns the iterator
-//!   * Such closures should return an error that contains the information about the current item
-//!     * Options
-//!       * Index
-//!         * This approach uses less memory and doesn't rely on the type implementing `Clone`, but requires more code
-//!       * Clone
-//!         * Properties
-//!           * Requires the type to implement `Clone`
-//!       * Ref
-//!         * Conclusion: strictly worse than Clone
-//!         * Pattern
-//!           * Two errors: ClosureRefError<'a> and ClosureError, `impl<'a> From<ClosureRefError<'a>> for ClosureError`
-//!         * Properties
-//!           * Requires the type to implement `Clone`, because we can't extract the owned data from the iterator source just by reference (only if we compare the raw pointers, but that would require iterating over the data source the same numbers of times as there are errors)
-//!       * Require using iterators that own the current item
-//!         * Conclusion: can't work because some iterators will be created by external crates, so we can't enforce that `Iterator::Item` is owned
-//!
-//! ```rust
-//! fn foo(a: String, b: String) {
-//!     let a_new = bar(a);
-//!     if b.is_empty() {
-//!         // NOTE: `a` is unavailable here because it has been consumed by `bar`
-//!         todo!()
-//!     }  else {
-//!         todo!()
-//!     }
-//! }
-//!
-//! fn bar(a: String) -> String {
-//!     todo!()
-//! }
-//! ```
+//! * The code must not use strings for error messages
+//! * The production code must not use `unwrap` or `expect` (only tests may use `unwrap` or `expect`)
+//! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
+//! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum
+//! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
+//! * If the compiler emits a warning: "the `Err`-variant returned from this function is very large", then it's necessary to wrap some fields of the error in a `Box`
 //!
 //! ## Definitions
 //!

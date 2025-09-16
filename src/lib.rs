@@ -38,6 +38,7 @@
 //! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 //! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
+//! * Use [`handle_bool!`] to return an error if some condition is true
 //!
 //! ## Definitions
 //!

@@ -31,8 +31,6 @@
 //! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
 //! * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
 //! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
-//! * Every error enum variant must have a `#[display(...)]` attribute
-//! * If the error enum variant has a `source` field, then the first argument of `#[display(...)]` attribute must end with "\n{source}"
 //! * If the error enum variant has a `source` field, then this field must be the first field
 //! * If the error type is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
 //! * The code must not use strings for error messages
@@ -40,7 +38,6 @@
 //! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 //! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
-//! * If the compiler emits a warning: "the `Err`-variant returned from this function is very large", then it's necessary to wrap some fields of the error in a `Box`
 //!
 //! ## Definitions
 //!

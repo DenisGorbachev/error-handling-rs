@@ -40,6 +40,7 @@
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 //! * Use [`handle_bool!`] to return an error if some condition is true
 //! * Don't call `.clone()` on the variables passed into error handling macros (there is no need to clone the variables because the macros consume them only in the error branch)
+//! * The error enum variants must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
 //!
 //! ## Definitions
 //!

@@ -47,55 +47,6 @@
 //!
 //! An expression that returns a [`Result`].
 //!
-//! For example:
-//!
-//! ```rust
-//! use std::collections::HashMap;
-//! use error_handling::{handle, handle_bool};
-//! use derive_more::Error;
-//! use fmt_derive::Display;
-//!
-//! pub fn foo(numbers: Vec<u32>) -> Result<u32, FooError> {
-//!     use FooError::*;
-//!     // the following `if` is a fallible expression
-//!     if numbers.is_empty() {
-//!         return Err(NumbersAreEmpty { numbers });
-//!     }
-//!     // the following call to `find_even` is a fallible expression
-//!     let result = find_even(numbers.clone().into_iter());
-//!     let even = result.map_err(|source| FindEven { source })?;
-//!     Ok(even)
-//! }
-//!
-//! pub fn multiply_key(hashmap: HashMap<String, u32>, key: &str) -> Result<u32, MultiplyKeyError> {
-//!     use MultiplyKeyError::*;
-//!     // the following call chain if a fallible expression
-//!     let value = hashmap.get(key).ok_or(KeyNotFound)?;
-//!     Ok(*value * 10)
-//! }
-//!
-//! pub fn find_even(mut numbers: impl Iterator<Item = u32>) -> Result<u32, FindEvenError> {
-//!     use FindEvenError::*;
-//!     numbers.find(|x| x % 2 == 0).ok_or(NotFound)
-//! }
-//!
-//! #[derive(Error, Display, Debug)]
-//! pub enum FooError {
-//!     NumbersAreEmpty { numbers: Vec<u32> },
-//!     FindEven { source: FindEvenError }
-//! }
-//!
-//! #[derive(Error, Display, Debug)]
-//! pub enum FindEvenError {
-//!     NotFound
-//! }
-//!
-//! #[derive(Error, Display, Debug)]
-//! pub enum MultiplyKeyError {
-//!     KeyNotFound
-//! }
-//! ```
-//!
 //! ### Data type
 //!
 //! A type that holds the actual data.

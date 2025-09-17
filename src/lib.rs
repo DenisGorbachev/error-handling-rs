@@ -25,7 +25,7 @@
 //!   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
 //!   * If the function is an associated function, the name of the error type must be exactly equal to the name of the type without generics concatenated with the name of the function in CamelCase concatenated with `Error`
 //!   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
-//! * The name of the error enum variant should end with `Failed` (for example: `ReadFileFailed`)
+//! * If the error variant name is associated with a child function call, the name of the error variant must be equal to the name of the function converted to CamelCase concatenated with `Failed` (for example: if the parent function calls `read_file`, then it should call it like this: `handle!(read_file(&path), ReadFileFailed)`
 //! * Every call to another fallible function must be wrapped in a unique error enum variant
 //! * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
 //! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
@@ -39,6 +39,7 @@
 //! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 //! * Use [`handle_bool!`] to return an error if some condition is true
+//! * Don't call `.clone()` on the variables passed into error handling macros (there is no need to clone the variables because the macros consume them only in the error branch)
 //!
 //! ## Definitions
 //!
@@ -50,7 +51,9 @@
 //!
 //! ```rust
 //! use std::collections::HashMap;
-//! use error_handling::{handle, handle_bool, Display, Error};
+//! use error_handling::{handle, handle_bool};
+//! use derive_more::Error;
+//! use fmt_derive::Display;
 //!
 //! pub fn foo(numbers: Vec<u32>) -> Result<u32, FooError> {
 //!     use FooError::*;
@@ -111,9 +114,6 @@
 //!
 //! * `RestClient` doesn't point to the actual data, it only allows querying it.
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
-
-pub use derive_more::Error;
-pub use fmt_derive::Display;
 
 mod macros;
 

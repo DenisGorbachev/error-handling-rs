@@ -166,7 +166,9 @@ macro_rules! index_err_async {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Display, Error, ItemError, PathBufDisplay};
+    use crate::{ItemError, PathBufDisplay};
+    use derive_more::Error;
+    use fmt_derive::Display;
     use futures::future::join_all;
     use serde::{Deserialize, Serialize};
     use std::io;

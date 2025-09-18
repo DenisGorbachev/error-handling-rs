@@ -102,6 +102,19 @@ macro_rules! handle_into_iter {
     };
 }
 
+/// [`handle_map_err!`](crate::handle_map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare), or exactly at the end of the block (in the position of returned expression).
+///
+/// It's better to use [`handle`](crate::handle) if the error variant does capture some owned variables.
+#[macro_export]
+macro_rules! handle_map_err {
+    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        $result.map_err(|source| $variant {
+            source: source.into(),
+            $($arg: $crate::into!($arg$(: $value)?)),*
+        })?
+    };
+}
+
 /// Internal
 #[macro_export]
 macro_rules! _into {

@@ -40,7 +40,19 @@
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 //! * Use [`handle_bool!`] to return an error if some condition is true
 //! * Don't call `.clone()` on the variables passed into error handling macros (there is no need to clone the variables because the macros consume them only in the error branch). The macros do not consume the variables that are passed into them in the success branch. If you call a macro, you can always use the variables that are passed into the macro call in the subsequent code as if they haven't been moved (because they actually are not moved in the success branch, only in the error branch).
+//! * Don't use `?` try operator - use [the macros from the "handle" family](#handle-family-macros)
 //! * The error enum variants must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
+//!
+//! ## Handle family macros
+//!
+//! Use the following macros for more concise error handling:
+//!
+//! * [`handle!`] instead of [`Result::map_err`]
+//! * [`handle_opt!`] instead of [`Option::ok_or`] and [`Option::ok_or_else`]
+//! * [`handle_bool!`] instead of `if condition { return Err(...) }`
+//! * [`handle_iter`] instead of code that handles errors in iterators
+//! * [`handle_iter_of_refs`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
+//! * [`handle_into_iter`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
 //!
 //! ## Definitions
 //!

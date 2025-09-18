@@ -11,9 +11,32 @@ macro_rules! handle {
             Ok(value) => value,
             Err(source) => return Err($variant {
                 source: source.into(),
-                $($arg: $crate::into!($arg$(: $value)?)),*
+                $($arg: $crate::_into!($arg$(: $value)?)),*
             }),
         }
+    };
+}
+
+#[macro_export]
+macro_rules! handle_opt {
+    ($option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        match $option {
+            Some(value) => value,
+            None => return Err($variant {
+                $($arg: $crate::_into!($arg$(: $value)?)),*
+            }),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! handle_bool {
+    ($condition:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        if $condition {
+            return Err($variant {
+                $($arg: $crate::_into!($arg$(: $value)?)),*
+            });
+        };
     };
 }
 
@@ -28,7 +51,7 @@ macro_rules! handle_iter {
             } else {
                 return Err($variant {
                     sources: errors.into(),
-                    $($arg: $crate::into!($arg$(: $value)?)),*
+                    $($arg: $crate::_into!($arg$(: $value)?)),*
                 });
             }
         }
@@ -64,7 +87,7 @@ macro_rules! handle_iter_of_refs {
             } else {
                 return Err($variant {
                     sources: errors.into(),
-                    $($arg: $crate::into!($arg$(: $value)?)),*
+                    $($arg: $crate::_into!($arg$(: $value)?)),*
                 });
             }
         }
@@ -79,69 +102,9 @@ macro_rules! handle_into_iter {
     };
 }
 
-/// [`handle_map_err!`](crate::handle_map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare), or exactly at the end of the block (in the position of returned expression).
-///
-/// Use [`handle`](crate::handle) if the error variant does capture some owned variables.
+/// Internal
 #[macro_export]
-macro_rules! handle_map_err {
-    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        $result.map_err(|source| $variant {
-            source: source.into(),
-            $($arg: $crate::into!($arg$(: $value)?)),*
-        })?
-    };
-}
-
-/// [`handle_final!`](crate::handle_final) should be used only at the end of the block (in the position of returned expression).
-///
-/// Use [`handle`](crate::handle) in the middle of the block.
-///
-/// [`handle_final!`](crate::handle_final) is different from [`handle_map_err!`](crate::handle_map_err) in that it doesn't apply the `?` operator to the resulting expression (it returns a `Result<T, E>`, not just `T`)
-#[macro_export]
-macro_rules! handle_final {
-    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        $result.map_err(|source| $variant {
-            source: source.into(),
-            $($arg: $crate::into!($arg$(: $value)?)),*
-        })
-    };
-}
-
-#[macro_export]
-macro_rules! handle_direct {
-    ($result:expr, $source:ident, $error:expr) => {
-        match $result {
-            Ok(value) => value,
-            Err($source) => return Err($error),
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! handle_opt {
-    ($option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        match $option {
-            Some(value) => value,
-            None => return Err($variant {
-                $($arg: $crate::into!($arg$(: $value)?)),*
-            }),
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! handle_bool {
-    ($condition:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
-        if $condition {
-            return Err($variant {
-                $($arg: $crate::into!($arg$(: $value)?)),*
-            });
-        };
-    };
-}
-
-#[macro_export]
-macro_rules! into {
+macro_rules! _into {
     ($arg:ident) => {
         $arg.into()
     };
@@ -150,15 +113,17 @@ macro_rules! into {
     };
 }
 
+/// Internal
 #[macro_export]
-macro_rules! index_err {
+macro_rules! _index_err {
     ($f:ident) => {
         |(index, item)| $f(item).map_err(|err| (index, err))
     };
 }
 
+/// Internal
 #[macro_export]
-macro_rules! index_err_async {
+macro_rules! _index_err_async {
     ($f:ident) => {
         async |(index, item)| $f(item).await.map_err(|err| (index, err))
     };
@@ -191,7 +156,7 @@ mod tests {
                 dir,
                 format,
             } = self;
-            let config = handle_map_err!(parse_config(&dir, format).await, ParseConfigFailed);
+            let config = handle!(parse_config(&dir, format).await, ParseConfigFailed);
             println!("{}", config.name);
             Ok(())
         }

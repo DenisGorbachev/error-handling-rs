@@ -102,6 +102,19 @@ macro_rules! handle_into_iter {
     };
 }
 
+/// [`handle_discard`](crate::handle_discard) should only be used when you want to discard the source error. This is discouraged. Prefer other handle-family macros that preserve the source error.
+#[macro_export]
+macro_rules! handle_discard {
+    ($result:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        match $result {
+            Ok(value) => value,
+            Err(_) => return Err($variant {
+                $($arg: $crate::_into!($arg$(: $value)?)),*
+            }),
+        }
+    };
+}
+
 /// [`map_err`](crate::map_err) should be used only when the error variant doesn't capture any owned variables (which is very rare), or exactly at the end of the block (in the position of returned expression).
 #[macro_export]
 macro_rules! map_err {
@@ -150,6 +163,7 @@ mod tests {
     use std::io;
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
+    use std::sync::{Arc, RwLock};
     use tokio::fs::read_to_string;
     use tokio::task::JoinSet;
 
@@ -344,5 +358,31 @@ mod tests {
     enum CheckFileRefError {
         ReadToStringFailed { source: io::Error },
         FileIsEmpty,
+    }
+
+    #[derive(Clone, Debug)]
+    struct Db {
+        user: User,
+    }
+
+    #[derive(Clone, Debug)]
+    struct User {
+        username: String,
+    }
+
+    #[allow(dead_code)]
+    fn get_username(db: Arc<RwLock<Db>>) -> Result<String, GetUsernameError> {
+        use GetUsernameError::*;
+        // `db.read()` returns `LockResult` whose Err variant is `PoisonError<RwLockReadGuard<'_, T>>`, which contains an anonymous lifetime
+        // The error enum returned from this function must contain only owned fields, so it can't contain a `source` that has a lifetime
+        // Therefore, we have to use handle_discard!, although it is discouraged
+        let guard = handle_discard!(db.read(), AcquireReadLockFailed);
+        let username = guard.user.username.clone();
+        Ok(username)
+    }
+
+    #[derive(Error, Display, Debug)]
+    pub enum GetUsernameError {
+        AcquireReadLockFailed,
     }
 }

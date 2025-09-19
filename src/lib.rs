@@ -42,6 +42,7 @@
 //! * Don't call `.clone()` on the variables passed into error handling macros (there is no need to clone the variables because the macros consume them only in the error branch). The macros do not consume the variables that are passed into them in the success branch. If you call a macro, you can always use the variables that are passed into the macro call in the subsequent code as if they haven't been moved (because they actually are not moved in the success branch, only in the error branch).
 //! * Don't use `?` try operator - use [the macros from the "handle" family](#handle-family-macros)
 //! * The error enum variants must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
+//! * When using `derive_more::Error`, don't add `#[error(not(source))]` to the fields (only a single field named `source` will be used for the error source, other fields are not used for the error source)
 //!
 //! ## Handle family macros
 //!

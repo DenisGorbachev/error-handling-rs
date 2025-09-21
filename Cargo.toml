@@ -20,10 +20,8 @@ readme = { generate = false }
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
-# NOTE: we must export `derive_more` instead of `derive_more_2` because it generates code that calls `derive_more` exactly
 [dependencies]
-derive_more = { version = "2.0.0", features = ["error"] }
-fmt-derive = { version = "0.1.0" }
+thiserror = "2.0.16"
 
 [dev-dependencies]
 futures = "0.3.31"

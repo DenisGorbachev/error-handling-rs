@@ -1,9 +1,8 @@
-use derive_more::Error;
-use fmt_derive::Display;
+use thiserror::Error;
 
-#[derive(Error, Display, Debug)]
+#[derive(Error, Debug)]
+#[error("error occurred for item {item}: {source}")]
 pub struct ItemError<T, E> {
     pub item: T,
-    #[error(source)]
     pub source: E,
 }

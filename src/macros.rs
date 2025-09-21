@@ -155,15 +155,14 @@ macro_rules! _index_err_async {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ItemError, PathBufDisplay};
-    use derive_more::Error;
-    use fmt_derive::Display;
+    use crate::ItemError;
     use futures::future::join_all;
     use serde::{Deserialize, Serialize};
     use std::io;
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
     use std::sync::{Arc, RwLock};
+    use thiserror::Error;
     use tokio::fs::read_to_string;
     use tokio::task::JoinSet;
 
@@ -261,8 +260,9 @@ mod tests {
         Ok(number)
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum PrintNameCommandError {
+        #[error("failed to parse config")]
         ParseConfigFailed { source: ParseConfigError },
     }
 
@@ -270,15 +270,18 @@ mod tests {
     /// Some variants have the `path` field because the `contents` depends on `path`
     /// `path` has type `PathBufDisplay` because `PathBuf` doesn't implement `Display`
     /// Some `source` field types are wrapped in `Box` according to suggestion from `result_large_err` lint
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum ParseConfigError {
-        ReadFileFailed { path: PathBufDisplay, source: io::Error },
-        DeserializeFromJson { path: PathBufDisplay, contents: String, source: Box<serde_json::error::Error> },
-        DeserializeFromToml { path: PathBufDisplay, contents: String, source: Box<toml::de::Error> },
+        #[error("failed to read the file: {path}")]
+        ReadFileFailed { path: PathBuf, source: io::Error },
+        #[error("failed to deserialize the file contents from JSON: {path}")]
+        DeserializeFromJson { path: PathBuf, contents: String, source: Box<serde_json::error::Error> },
+        #[error("failed to deserialize the file contents from TOML: {path}")]
+        DeserializeFromToml { path: PathBuf, contents: String, source: Box<toml::de::Error> },
     }
 
     #[allow(dead_code)]
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum ProcessError {}
 
     #[allow(dead_code)]
@@ -303,34 +306,41 @@ mod tests {
         Ok(number)
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum ParseEvenNumberError {
+        #[error("failed to parse input")]
         InputParseFailed { source: <u32 as FromStr>::Err },
+        #[error("number is not even: {number}")]
         NumberNotEven { number: u32 },
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum FindEvenError {
+        #[error("even number not found")]
         NotFound,
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum MultiplyEvensError {
+        #[error("failed to check {len} numbers", len = .sources.len())]
         CheckEvensFailed { sources: Vec<CheckEvenError> },
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum ReadFilesError {
+        #[error("failed to check {len} files", len = .sources.len())]
         CheckFileFailed { sources: Vec<CheckFileError> },
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum ReadFilesRefError {
+        #[error("failed to check {len} files", len = .sources.len())]
         CheckFileRefFailed { sources: Vec<ItemError<PathBuf, CheckFileRefError>> },
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum CheckEvenError {
+        #[error("number is not even: {number}")]
         NumberNotEven { number: u32 },
     }
 
@@ -341,9 +351,11 @@ mod tests {
         Ok(content)
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum CheckFileError {
+        #[error("failed to read the file to string: {path}")]
         ReadToStringFailed { path: PathBuf, source: io::Error },
+        #[error("file is empty: {path}")]
         FileIsEmpty { path: PathBuf },
     }
 
@@ -354,9 +366,11 @@ mod tests {
         Ok(content)
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     enum CheckFileRefError {
+        #[error("failed to read the file to string")]
         ReadToStringFailed { source: io::Error },
+        #[error("file is empty")]
         FileIsEmpty,
     }
 
@@ -381,8 +395,9 @@ mod tests {
         Ok(username)
     }
 
-    #[derive(Error, Display, Debug)]
+    #[derive(Error, Debug)]
     pub enum GetUsernameError {
+        #[error("failed to acquire read lock")]
         AcquireReadLockFailed,
     }
 }

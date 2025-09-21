@@ -98,17 +98,20 @@ run = """
 set -xeuo pipefail
 dir=$MISE_PROJECT_ROOT
 file=$usage_file
-header=$(taplo get -f "$dir/Cargo.toml" "package.description")
+# header=$(taplo get -f "$dir/Cargo.toml" "package.description")
+
+cp $dir/internal/AGENTS.md "$file"
+echo "" >> "$file"
 repomix \
     --include src,tests,examples \
     --style markdown \
     --no-file-summary \
     --no-directory-structure \
-    --header-text "$header" \
-    --output "$file" \
+    --stdout \
     {{arg(name="rest")}} \
     "$@" \
-    $dir
+    $dir \
+    >> "$file"
 """
 
 [tasks."agent:on:stop"]

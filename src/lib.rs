@@ -53,9 +53,9 @@
 //! * [`handle!`] instead of [`Result::map_err`]
 //! * [`handle_opt!`] instead of [`Option::ok_or`] and [`Option::ok_or_else`]
 //! * [`handle_bool!`] instead of `if condition { return Err(...) }`
-//! * [`handle_iter`] instead of code that handles errors in iterators
-//! * [`handle_iter_of_refs`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
-//! * [`handle_into_iter`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
+//! * [`handle_iter!`] instead of code that handles errors in iterators
+//! * [`handle_iter_of_refs!`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
+//! * [`handle_into_iter!`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
 //!
 //! ## Definitions
 //!

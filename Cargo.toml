@@ -21,6 +21,7 @@ readme = { generate = false }
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
+tempfile = "3"
 thiserror = "2"
 
 [dev-dependencies]

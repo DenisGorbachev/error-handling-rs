@@ -1,7 +1,7 @@
 use crate::functions::write_to_named_temp_file;
 use std::error::Error;
 
-pub fn output_error_cli(error: &dyn Error) {
+pub fn eprintln_error(error: &dyn Error) {
     eprintln!("- {}", error);
     let mut source = error;
     while let Some(source_new) = source.source() {

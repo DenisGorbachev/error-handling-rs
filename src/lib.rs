@@ -29,6 +29,7 @@
 //! * The code must not use strings for error messages
 //! * The production code must not use `unwrap` or `expect` (only tests may use `unwrap` or `expect`)
 //! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
+//! * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
 //!
 //! ### Conveniences
 //!
@@ -87,5 +88,7 @@ mod macros;
 mod types;
 
 pub use types::*;
+
 mod functions;
+
 pub use functions::*;

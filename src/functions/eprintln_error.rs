@@ -13,7 +13,7 @@ pub fn eprintln_error(error: &dyn Error) {
     let result = write_to_named_temp_file::write_to_named_temp_file(error_debug.as_bytes());
     match result {
         Ok((_file, path_buf)) => {
-            eprintln!("Full error written to file:\n{}", path_buf.display());
+            eprintln!("See the full error report:\nless {}", path_buf.display());
         }
         Err(other_error) => {
             eprintln!("{other_error:#?}");

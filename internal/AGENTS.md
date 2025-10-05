@@ -14,3 +14,6 @@
   * The `#[error]` attribute must contain the error message displayed for the user
   * The `#[error]` attribute must not contain the `source` field
   * The `#[error]` attribute should contain only those fields that can be displayed on one line
+  * If the `#[error]` attribute contains fields, then those fields must be wrapped in single quotes. This is necessary to correctly display fields that may contain spaces.
+    * Good: `#[error("user '{name}' not found")]`
+    * Bad: `#[error("user {name} not found")]`

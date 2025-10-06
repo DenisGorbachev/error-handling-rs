@@ -14,6 +14,17 @@
   * The `#[error]` attribute must contain the error message displayed for the user
   * The `#[error]` attribute must not contain the `source` field
   * The `#[error]` attribute should contain only those fields that can be displayed on one line
+  * If the `#[error]` attribute contains fields that implement `Display`, then those fields must be output using `Display` formatting (not `Debug` formatting)
+    * Good:
+      ```
+      #[error("task not found for query '{query}'")]
+      TaskNotFound { query: String }
+      ```
+    * Bad:
+      ```
+      #[error("task not found for query '{query:?}'")]
+      TaskNotFound { query: String }
+      ```
   * If the `#[error]` attribute contains fields, then those fields must be wrapped in single quotes. This is necessary to correctly display fields that may contain spaces.
     * Good: `#[error("user '{name}' not found")]`
     * Bad: `#[error("user {name} not found")]`

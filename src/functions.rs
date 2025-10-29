@@ -2,9 +2,9 @@ mod get_root_error;
 
 pub use get_root_error::*;
 
-mod eprintln_error;
+mod write_error;
 
-pub use eprintln_error::*;
+pub use write_error::*;
 
 mod write_to_named_temp_file;
 

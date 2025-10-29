@@ -1,10 +1,8 @@
 use std::error::Error;
+use thiserror::Error;
 
-#[derive(Eq, PartialEq, Default, Hash, Clone, Debug)]
-pub struct ErrVec<T: Error>(Vec<T>);
-
-impl<T: Error> ErrVec<T> {
-    pub fn sources(&self) -> &[&(dyn Error + 'static)] {
-        todo!()
-    }
+#[derive(Error, Default, Debug)]
+#[error("encountered {len} errors", len = self.inner.len())]
+pub struct ErrVec {
+    pub inner: Vec<Box<dyn Error + 'static>>,
 }

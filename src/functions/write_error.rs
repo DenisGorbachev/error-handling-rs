@@ -1,17 +1,13 @@
 use crate::functions::write_to_named_temp_file;
+use crate::{ErrVec, Prefixer};
 use std::error::Error;
 use std::io;
 use std::io::{Write, stderr};
 
-pub fn writeln_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), io::Error> {
-    writeln!(writer, "- {}", error)?;
-    let mut source = error;
-    while let Some(source_new) = source.source() {
-        writeln!(writer, "- {}", source_new)?;
-        source = source_new;
-    }
+pub fn writeln_error<Writer: Write>(error: &(dyn Error + 'static), writer: &mut Writer) -> Result<(), io::Error> {
+    writeln_error_only(error, writer)?;
     writeln!(writer)?;
-    let error_debug = format!("{:#?}", error);
+    let error_debug = format!("{error:#?}");
     let result = write_to_named_temp_file(error_debug.as_bytes());
     match result {
         Ok((_file, path_buf)) => {
@@ -23,13 +19,34 @@ pub fn writeln_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), i
     }
 }
 
-pub fn eprintln_error(error: &dyn Error) {
+pub fn writeln_error_only<Writer: Write>(error: &(dyn Error + 'static), writer: &mut Writer) -> Result<(), io::Error> {
+    writeln!(writer, "- {error}")?;
+    let source = error;
+    if let Some(err_vec) = source.downcast_ref::<ErrVec>() {
+        let mut prefixer = error_prefixer(writer);
+        for err in &err_vec.inner {
+            writeln_error_only(err.as_ref(), &mut prefixer)?;
+        }
+        // TODO: Display multiple errors
+        todo!()
+    } else if let Some(source_new) = source.source() {
+        writeln_error_only(source_new, writer)
+    } else {
+        Ok(())
+    }
+}
+
+pub fn eprintln_error(error: &(dyn Error + 'static)) {
     let mut stderr = stderr().lock();
     let result = writeln_error(error, &mut stderr);
     match result {
         Ok(()) => (),
-        Err(err) => eprintln!("failed to write to stderr: {:#?}", err),
+        Err(err) => eprintln!("failed to write to stderr: {err:#?}"),
     }
+}
+
+pub fn error_prefixer<Writer: Write>(writer: &mut Writer) -> Prefixer<'_, Writer> {
+    Prefixer::new("  + ", "    ", writer)
 }
 
 #[cfg(test)]

@@ -17,3 +17,4 @@
 
 * Must support errors from external crates
   * This requirement rules out external traits, because the users of this crate won't be able to implement an external trait for an external type
+* Must not require `nightly` features

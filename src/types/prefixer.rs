@@ -1,15 +1,15 @@
 use std::io::Write;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
-pub struct Prefixer<Writer: Write> {
+#[derive(Debug)]
+pub struct Prefixer<'w, Writer: Write> {
     pub first_line_prefix: String,
     pub next_line_prefix: String,
-    pub writer: Writer,
+    pub writer: &'w mut Writer,
     pub is_first_line: bool,
 }
 
-impl<Writer: Write> Prefixer<Writer> {
-    pub fn new(first_line_prefix: impl Into<String>, next_line_prefix: impl Into<String>, writer: Writer) -> Self {
+impl<'w, Writer: Write> Prefixer<'w, Writer> {
+    pub fn new(first_line_prefix: impl Into<String>, next_line_prefix: impl Into<String>, writer: &'w mut Writer) -> Self {
         Self {
             first_line_prefix: first_line_prefix.into(),
             next_line_prefix: next_line_prefix.into(),
@@ -19,7 +19,7 @@ impl<Writer: Write> Prefixer<Writer> {
     }
 }
 
-impl<Writer: Write> Write for Prefixer<Writer> {
+impl<'w, Writer: Write> Write for Prefixer<'w, Writer> {
     fn write(&mut self, _buf: &[u8]) -> std::io::Result<usize> {
         if self.is_first_line {
             self.writer.write(self.first_line_prefix.as_bytes())?;

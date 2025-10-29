@@ -67,7 +67,7 @@ macro_rules! handle_iter {
                 oks
             } else {
                 return Err($variant {
-                    sources: errors.into(),
+                    source: errors.into(),
                     $($arg: $crate::_into!($arg$(: $value)?)),*
                 });
             }
@@ -103,7 +103,7 @@ macro_rules! handle_iter_of_refs {
                 (outputs, items)
             } else {
                 return Err($variant {
-                    sources: errors.into(),
+                    source: errors.into(),
                     $($arg: $crate::_into!($arg$(: $value)?)),*
                 });
             }
@@ -172,7 +172,7 @@ macro_rules! _index_err_async {
 
 #[cfg(test)]
 mod tests {
-    use crate::ItemError;
+    use crate::{ErrVec, PathBufDisplay};
     use futures::future::join_all;
     use serde::{Deserialize, Serialize};
     use std::io;
@@ -265,7 +265,8 @@ mod tests {
         use ReadFilesRefError::*;
         let iter = paths.iter().map(check_file_ref);
         let results = join_all(iter).await;
-        let (outputs, _paths) = handle_iter_of_refs!(results.into_iter(), paths, CheckFileRefFailed);
+        let items = paths.into_iter().map(PathBufDisplay::from);
+        let (outputs, _items) = handle_iter_of_refs!(results.into_iter(), items, CheckFileRefFailed);
         Ok(outputs)
     }
 
@@ -285,7 +286,6 @@ mod tests {
 
     /// Variants don't have the `format` field because every variant already corresponds to a single specific format
     /// Some variants have the `path` field because the `contents` depends on `path`
-    /// `path` has type `PathBufDisplay` because `PathBuf` doesn't implement `Display`
     /// Some `source` field types are wrapped in `Box` according to suggestion from `result_large_err` lint
     #[derive(Error, Debug)]
     enum ParseConfigError {
@@ -339,20 +339,20 @@ mod tests {
 
     #[derive(Error, Debug)]
     enum MultiplyEvensError {
-        #[error("failed to check {len} numbers", len = .sources.len())]
-        CheckEvensFailed { sources: Vec<CheckEvenError> },
+        #[error("failed to check {len} numbers", len = source.len())]
+        CheckEvensFailed { source: ErrVec },
     }
 
     #[derive(Error, Debug)]
     enum ReadFilesError {
-        #[error("failed to check {len} files", len = .sources.len())]
-        CheckFileFailed { sources: Vec<CheckFileError> },
+        #[error("failed to check {len} files", len = source.len())]
+        CheckFileFailed { source: ErrVec },
     }
 
     #[derive(Error, Debug)]
     enum ReadFilesRefError {
-        #[error("failed to check {len} files", len = .sources.len())]
-        CheckFileRefFailed { sources: Vec<ItemError<PathBuf, CheckFileRefError>> },
+        #[error("failed to check {len} files", len = source.len())]
+        CheckFileRefFailed { source: ErrVec },
     }
 
     #[derive(Error, Debug)]

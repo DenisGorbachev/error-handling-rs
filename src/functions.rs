@@ -2,9 +2,9 @@ mod get_root_error;
 
 pub use get_root_error::*;
 
-mod write_error;
+mod writeln_error;
 
-pub use write_error::*;
+pub use writeln_error::*;
 
 mod write_to_named_temp_file;
 

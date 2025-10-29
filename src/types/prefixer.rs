@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io::{self, Write};
 
-/// This type uses a `dyn Write` instead of `impl Write` to avoid a trait-recursion explosion in [`crate::writeln_error_only`]
+/// This type uses a `dyn Write` instead of `impl Write` to avoid a trait-recursion explosion in [`crate::writeln_error_to_writer`]
 pub struct Prefixer<'w> {
     pub first_line_prefix: String,
     pub next_line_prefix: String,

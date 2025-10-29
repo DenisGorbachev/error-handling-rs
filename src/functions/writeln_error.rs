@@ -4,8 +4,8 @@ use std::error::Error;
 use std::io;
 use std::io::{Write, stderr};
 
-pub fn writeln_error(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
-    writeln_error_only(error, writer)?;
+pub fn writeln_error_to_writer_and_file(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
+    writeln_error_to_writer(error, writer)?;
     writeln!(writer)?;
     let error_debug = format!("{error:#?}");
     let result = write_to_named_temp_file(error_debug.as_bytes());
@@ -19,17 +19,17 @@ pub fn writeln_error(error: &(dyn Error + 'static), writer: &mut dyn Write) -> R
     }
 }
 
-pub fn writeln_error_only(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
+pub fn writeln_error_to_writer(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
     writeln!(writer, "- {error}")?;
     let source = error;
     if let Some(err_vec) = source.downcast_ref::<ErrVec>() {
         for err in &err_vec.inner {
             let mut prefixer = error_prefixer(writer);
-            writeln_error_only(err.as_ref(), &mut prefixer)?;
+            writeln_error_to_writer(err.as_ref(), &mut prefixer)?;
         }
         Ok(())
     } else if let Some(source_new) = source.source() {
-        writeln_error_only(source_new, writer)
+        writeln_error_to_writer(source_new, writer)
     } else {
         Ok(())
     }
@@ -37,7 +37,7 @@ pub fn writeln_error_only(error: &(dyn Error + 'static), writer: &mut dyn Write)
 
 pub fn eprintln_error(error: &(dyn Error + 'static)) {
     let mut stderr = stderr().lock();
-    let result = writeln_error(error, &mut stderr);
+    let result = writeln_error_to_writer_and_file(error, &mut stderr);
     match result {
         Ok(()) => (),
         Err(err) => eprintln!("failed to write to stderr: {err:#?}"),
@@ -50,8 +50,8 @@ pub fn error_prefixer(writer: &mut dyn Write) -> Prefixer<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::functions::write_error::tests::JsonSchemaNewError::InputMustBeObject;
-    use crate::{ErrVec, writeln_error_only};
+    use crate::functions::writeln_error::tests::JsonSchemaNewError::InputMustBeObject;
+    use crate::{ErrVec, writeln_error_to_writer};
     use thiserror::Error;
 
     #[test]
@@ -80,9 +80,9 @@ mod tests {
             },
         };
         let mut output = Vec::new();
-        writeln_error_only(&error, &mut output).unwrap();
+        writeln_error_to_writer(&error, &mut output).unwrap();
         let string = String::from_utf8(output).unwrap();
-        assert_eq!(string, include_str!("write_error/must_write_error.txt"))
+        assert_eq!(string, include_str!("writeln_error/must_write_error.txt"))
     }
 
     #[derive(Error, Debug)]

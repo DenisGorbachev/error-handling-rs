@@ -4,7 +4,7 @@ use std::error::Error;
 use std::io;
 use std::io::{Write, stderr};
 
-pub fn writeln_error<Writer: Write>(error: &(dyn Error + 'static), writer: &mut Writer) -> Result<(), io::Error> {
+pub fn writeln_error(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
     writeln_error_only(error, writer)?;
     writeln!(writer)?;
     let error_debug = format!("{error:#?}");
@@ -19,16 +19,15 @@ pub fn writeln_error<Writer: Write>(error: &(dyn Error + 'static), writer: &mut 
     }
 }
 
-pub fn writeln_error_only<Writer: Write>(error: &(dyn Error + 'static), writer: &mut Writer) -> Result<(), io::Error> {
+pub fn writeln_error_only(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
     writeln!(writer, "- {error}")?;
     let source = error;
     if let Some(err_vec) = source.downcast_ref::<ErrVec>() {
-        let mut prefixer = error_prefixer(writer);
         for err in &err_vec.inner {
+            let mut prefixer = error_prefixer(writer);
             writeln_error_only(err.as_ref(), &mut prefixer)?;
         }
-        // TODO: Display multiple errors
-        todo!()
+        Ok(())
     } else if let Some(source_new) = source.source() {
         writeln_error_only(source_new, writer)
     } else {
@@ -45,23 +44,22 @@ pub fn eprintln_error(error: &(dyn Error + 'static)) {
     }
 }
 
-pub fn error_prefixer<Writer: Write>(writer: &mut Writer) -> Prefixer<'_, Writer> {
-    Prefixer::new("  + ", "    ", writer)
+pub fn error_prefixer(writer: &mut dyn Write) -> Prefixer<'_> {
+    Prefixer::new("  * ", "    ", writer)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::functions::write_error::tests::JsonSchemaNewError::InputMustBeObject;
-    use crate::writeln_error;
+    use crate::{ErrVec, writeln_error_only};
     use thiserror::Error;
 
-    #[ignore]
     #[test]
     fn must_write_error() {
         let error = CliRunError::CommandRunFailed {
             source: CommandRunError::I18nUpdateRunFailed {
                 source: I18nUpdateRunError::UpdateRowsFailed {
-                    sources: vec![
+                    source: vec![
                         UpdateRowError::I18nRequestFailed {
                             source: I18nRequestError::JsonSchemaNewFailed {
                                 source: InputMustBeObject {
@@ -72,16 +70,17 @@ mod tests {
                         },
                         UpdateRowError::I18nRequestFailed {
                             source: I18nRequestError::RequestSendFailed {
-                                source: tokio::io::Error::new(tokio::io::ErrorKind::AddrNotAvailable, "Address 239.143.73.1 is not available"),
+                                source: tokio::io::Error::new(tokio::io::ErrorKind::AddrNotAvailable, "address 239.143.73.1 is not available"),
                             },
                             row: Row::new("Bar"),
                         },
-                    ],
+                    ]
+                    .into(),
                 },
             },
         };
         let mut output = Vec::new();
-        writeln_error(&error, &mut output).unwrap();
+        writeln_error_only(&error, &mut output).unwrap();
         let string = String::from_utf8(output).unwrap();
         assert_eq!(string, include_str!("write_error/must_write_error.txt"))
     }
@@ -100,8 +99,8 @@ mod tests {
 
     #[derive(Error, Debug)]
     pub enum I18nUpdateRunError {
-        #[error("failed to update {len} rows", len = sources.len())]
-        UpdateRowsFailed { sources: Vec<UpdateRowError> },
+        #[error("failed to update {len} rows", len = source.len())]
+        UpdateRowsFailed { source: ErrVec },
     }
 
     #[derive(Error, Debug)]

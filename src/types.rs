@@ -13,3 +13,5 @@ use std::path::PathBuf;
 pub type PathBufDisplay = DisplayAsDebug<PathBuf>;
 mod prefixer;
 pub use prefixer::*;
+mod err_vec;
+pub use err_vec::*;

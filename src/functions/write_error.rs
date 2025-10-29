@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io;
 use std::io::{Write, stderr};
 
-pub fn write_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), io::Error> {
+pub fn writeln_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), io::Error> {
     writeln!(writer, "- {}", error)?;
     let mut source = error;
     while let Some(source_new) = source.source() {
@@ -12,7 +12,7 @@ pub fn write_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), io:
     }
     writeln!(writer)?;
     let error_debug = format!("{:#?}", error);
-    let result = write_to_named_temp_file::write_to_named_temp_file(error_debug.as_bytes());
+    let result = write_to_named_temp_file(error_debug.as_bytes());
     match result {
         Ok((_file, path_buf)) => {
             writeln!(writer, "See the full error report:\nless {}", path_buf.display())
@@ -25,7 +25,7 @@ pub fn write_error(error: &dyn Error, writer: &mut impl Write) -> Result<(), io:
 
 pub fn eprintln_error(error: &dyn Error) {
     let mut stderr = stderr().lock();
-    let result = write_error(error, &mut stderr);
+    let result = writeln_error(error, &mut stderr);
     match result {
         Ok(()) => (),
         Err(err) => eprintln!("failed to write to stderr: {:#?}", err),
@@ -35,7 +35,7 @@ pub fn eprintln_error(error: &dyn Error) {
 #[cfg(test)]
 mod tests {
     use crate::functions::write_error::tests::JsonSchemaNewError::InputMustBeObject;
-    use crate::write_error;
+    use crate::writeln_error;
     use thiserror::Error;
 
     #[ignore]
@@ -64,7 +64,7 @@ mod tests {
             },
         };
         let mut output = Vec::new();
-        write_error(&error, &mut output).unwrap();
+        writeln_error(&error, &mut output).unwrap();
         let string = String::from_utf8(output).unwrap();
         assert_eq!(string, include_str!("write_error/must_write_error.txt"))
     }

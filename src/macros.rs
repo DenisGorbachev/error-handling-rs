@@ -17,6 +17,7 @@ macro_rules! handle {
     };
 }
 
+/// See also: [`handle_opt_take!`](crate::handle_opt_take)
 #[macro_export]
 macro_rules! handle_opt {
     ($option:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
@@ -25,6 +26,22 @@ macro_rules! handle_opt {
             None => return Err($variant {
                 $($arg: $crate::_into!($arg$(: $value)?)),*
             }),
+        }
+    };
+}
+
+/// This macro is an opposite of [`handle_opt!`](crate::handle_opt) - it returns an error if the option contains a `Some` variant.
+///
+/// Note that this macro calls [`Option::take`], which will leave a `None` if the option was `Some(value)`.
+/// Note that this macro has a mandatory argument `$some_value` (used in `if let Some($some_value) = $option.take()`), which will also be passed to the error enum variant.
+#[macro_export]
+macro_rules! handle_opt_take {
+    ($option:expr, $variant:ident, $some_value:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
+        if let Some($some_value) = $option.take() {
+            return Err($variant {
+                $some_value: $some_value.into(),
+                $($arg: $crate::_into!($arg$(: $value)?)),*
+            })
         }
     };
 }
@@ -399,5 +416,40 @@ mod tests {
     pub enum GetUsernameError {
         #[error("failed to acquire read lock")]
         AcquireReadLockFailed,
+    }
+
+    #[allow(dead_code)]
+    fn get_answer(prompt: String, get_response: &mut impl FnMut(String) -> Result<WeirdResponse, io::Error>) -> Result<String, GetAnswerError> {
+        use GetAnswerError::*;
+        // Since the `get_response` external API doesn't return the `prompt` in its error, we have to clone `prompt` before passing it as argument, so that we could pass it to the error enum variant
+        // Cloning may be necessary with external APIs that don't return arguments in errors, but it must not be necessary in our code
+        let mut response = handle!(get_response(prompt.clone()), GetResponseFailed, prompt);
+        handle_opt_take!(response.error, ResponseContainsError, error);
+        Ok(response.answer)
+    }
+
+    /// OpenAI Responses API returns a response with `error: Option<WeirdResponseError>` field, which is weird, but must still be handled
+    #[derive(Debug)]
+    pub struct WeirdResponse {
+        answer: String,
+        error: Option<WeirdResponseError>,
+    }
+
+    #[allow(dead_code)]
+    #[derive(Error, Debug)]
+    pub enum WeirdResponseError {
+        #[error("prompt is empty")]
+        PromptIsEmpty,
+        #[error("context limit reached")]
+        ContextLimitReached,
+    }
+
+    /// [`GetAnswerError::GetResponseFailed`] `error` attribute doesn't contain a reference to `{prompt}` because the prompt can be very long, so it would make the error message very long, which is undesirable
+    #[derive(Error, Debug)]
+    pub enum GetAnswerError {
+        #[error("failed to get response")]
+        GetResponseFailed { source: io::Error, prompt: String },
+        #[error("response contains an error")]
+        ResponseContainsError { error: WeirdResponseError },
     }
 }

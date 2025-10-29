@@ -83,6 +83,8 @@
 //! * `RestClient` doesn't point to the actual data, it only allows querying it.
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
 
+extern crate core;
+
 mod macros;
 
 mod types;

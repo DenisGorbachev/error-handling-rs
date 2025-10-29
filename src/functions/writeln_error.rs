@@ -5,7 +5,7 @@ use std::io;
 use std::io::{Write, stderr};
 
 pub fn writeln_error_to_writer_and_file(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
-    writeln_error_to_writer(error, writer)?;
+    writeln_error_to_writer(error, writer, true)?;
     writeln!(writer)?;
     let error_debug = format!("{error:#?}");
     let result = write_to_named_temp_file(error_debug.as_bytes());
@@ -19,19 +19,24 @@ pub fn writeln_error_to_writer_and_file(error: &(dyn Error + 'static), writer: &
     }
 }
 
-pub fn writeln_error_to_writer(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
-    writeln!(writer, "- {error}")?;
+pub fn writeln_error_to_writer(error: &(dyn Error + 'static), writer: &mut dyn Write, is_top_level: bool) -> Result<(), io::Error> {
     let source = error;
     if let Some(err_vec) = source.downcast_ref::<ErrVec>() {
+        if is_top_level {
+            writeln!(writer, "- {error}")?;
+        }
         for err in &err_vec.inner {
             let mut prefixer = error_prefixer(writer);
-            writeln_error_to_writer(err.as_ref(), &mut prefixer)?;
+            writeln_error_to_writer(err.as_ref(), &mut prefixer, false)?;
         }
         Ok(())
-    } else if let Some(source_new) = source.source() {
-        writeln_error_to_writer(source_new, writer)
     } else {
-        Ok(())
+        writeln!(writer, "- {error}")?;
+        if let Some(source_new) = source.source() {
+            writeln_error_to_writer(source_new, writer, false)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -80,7 +85,7 @@ mod tests {
             },
         };
         let mut output = Vec::new();
-        writeln_error_to_writer(&error, &mut output).unwrap();
+        writeln_error_to_writer(&error, &mut output, true).unwrap();
         let string = String::from_utf8(output).unwrap();
         assert_eq!(string, include_str!("writeln_error/must_write_error.txt"))
     }

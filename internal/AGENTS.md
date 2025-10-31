@@ -16,12 +16,12 @@
   * The `#[error]` attribute should contain only those fields that can be displayed on one line
   * If the `#[error]` attribute contains fields that implement `Display`, then those fields must be output using `Display` formatting (not `Debug` formatting)
     * Good:
-      ```
+      ```rust
       #[error("task not found for query '{query}'")]
       TaskNotFound { query: String }
       ```
     * Bad:
-      ```
+      ```rust
       #[error("task not found for query '{query:?}'")]
       TaskNotFound { query: String }
       ```

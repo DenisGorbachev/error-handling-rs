@@ -17,7 +17,6 @@ cargo-binstall = "1.10.15"
 "cargo:cargo-nextest" = "0.9.102"
 "cargo:cargo-expand" = "1.0.114"
 "cargo:rumdl" = "0.0.166"
-codex = "0.50.0"
 
 [tasks."build"]
 run = "cargo build"

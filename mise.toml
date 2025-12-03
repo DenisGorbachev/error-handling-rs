@@ -108,7 +108,8 @@ file=$usage_file
 cp $dir/internal/AGENTS.md "$file"
 echo "" >> "$file"
 repomix \
-    --include src,tests,examples \
+    --include "src,tests,examples" \
+    --ignore "src/drafts,src/**/fixtures/**" \
     --style markdown \
     --no-file-summary \
     --no-directory-structure \

@@ -87,7 +87,7 @@ mod tests {
         let mut output = Vec::new();
         writeln_error_to_writer(&error, &mut output, true).unwrap();
         let string = String::from_utf8(output).unwrap();
-        assert_eq!(string, include_str!("writeln_error/must_write_error.txt"))
+        assert_eq!(string, include_str!("writeln_error/fixtures/must_write_error.txt"))
     }
 
     #[derive(Error, Debug)]

@@ -11,7 +11,7 @@ keywords = []
 categories = []
 
 [package.metadata.details]
-title = "Error handling best practices"
+title = "Error handling utilities"
 tagline = ""
 summary = ""
 announcement = ""

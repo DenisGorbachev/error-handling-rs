@@ -1,5 +1,61 @@
 //! # Error handling
 //!
+//! ## General
+//!
+//! This crate provides error handling utilities with improved debugging experience.
+//!
+//! Compare:
+//!
+//! ```rust
+//! # use std::io;
+//! # use std::fs::read_to_string;
+//! # use std::path::{Path, PathBuf};
+//! # use serde::{Deserialize, Serialize};
+//! # use serde_json::from_str;
+//! # use thiserror::Error;
+//! # use error_handling::handle;
+//! #
+//! #[derive(Serialize, Deserialize)]
+//! struct Config {/* some fields */}
+//!
+//! // traditional error handling
+//! fn parse_config_v1(path: PathBuf) -> io::Result<Config> {
+//!     let contents = read_to_string(&path)?;
+//!     let config = from_str(&contents).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+//!     Ok(config)
+//! }
+//!
+//! // better error handling
+//! fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
+//!     use ParseConfigError::*;
+//!     let contents = handle!(read_to_string(&path), ReadToStringFailed, path);
+//!     let config = handle!(from_str(&contents), DeserializeFailed, path, contents);
+//!     Ok(config)
+//! }
+//!
+//! #[derive(Error, Debug)]
+//! enum ParseConfigError {
+//!     #[error("failed to read file to string: '{}'", path.display())]
+//!     ReadToStringFailed { path: PathBuf, source: std::io::Error },
+//!     #[error("failed to parse the file contents into config: '{}'", path.display())]
+//!     DeserializeFailed { path: PathBuf, contents: String, source: serde_json::Error }
+//! }
+//! ```
+//!
+//! Advantages:
+//!
+//! * `parse_config_v2` allows you to determine exactly what error has occurred
+//! * `parse_config_v2` provides you with all information needed to fix the underlying issue
+//! * `parse_config_v2` allows you to retry the call by reusing the `path` (avoiding unnecessary clones)
+//!
+//! Disadvantages:
+//!
+//! * `parse_config_v2` is longer
+//!
+//! In short, `parse_config_v2` is strictly better code, but it requires to write more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it's better to use this approach, which provides you with better errors.
+//!
+//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error.
+//!
 //! ## Goal
 //!
 //! Help the caller diagnose the issue, fix it, and retry the call.

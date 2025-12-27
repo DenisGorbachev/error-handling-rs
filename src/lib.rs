@@ -2,7 +2,7 @@
 //!
 //! ## General
 //!
-//! This crate provides error handling utilities with improved debugging experience.
+//! This crate provides error handling utilities for a better debugging experience.
 //!
 //! Compare:
 //!
@@ -13,7 +13,7 @@
 //! # use serde::{Deserialize, Serialize};
 //! # use serde_json::from_str;
 //! # use thiserror::Error;
-//! # use error_handling::handle;
+//! # use errgonomic::handle;
 //! #
 //! #[derive(Serialize, Deserialize)]
 //! struct Config {/* some fields */}

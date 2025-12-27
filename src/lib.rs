@@ -1,10 +1,8 @@
-//! # Error handling
+//! # Errgonomic
 //!
-//! ## General
+//! Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
 //!
-//! This crate provides error handling utilities for a better debugging experience.
-//!
-//! Compare:
+//! ## Example
 //!
 //! ```rust
 //! # use std::io;
@@ -52,9 +50,24 @@
 //!
 //! * `parse_config_v2` is longer
 //!
-//! In short, `parse_config_v2` is strictly better code, but it requires to write more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it's better to use this approach, which provides you with better errors.
+//! In short, `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it's better to use this approach, which provides you with better errors.
 //!
-//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error.
+//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
+//!
+//! ```rust
+//! # use errgonomic::exit_result;
+//! # use thiserror::Error;
+//! # use std::process::ExitCode;
+//! #
+//! # #[derive(Error, Debug)]
+//! # enum Err {}
+//! #
+//! # fn run() -> Result<(), Err> { Ok(()) }
+//! #
+//! pub fn main() -> ExitCode {
+//!     exit_result(run())
+//! }
+//! ```
 //!
 //! ## Goal
 //!

@@ -52,6 +52,10 @@
 //!
 //! In short, `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it's better to use this approach, which provides you with better errors.
 //!
+//! This crates provides the handle family of macros which simplify writing comprehensive error handling code.
+//!
+//! ## Better debugging
+//!
 //! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
 //!
 //! ```rust
@@ -69,17 +73,18 @@
 //! }
 //! ```
 //!
-//! ## Goal
+//! This will produce a nice "error trace" like below:
+#![doc = "```text"]
+#![doc = include_str!("./functions/writeln_error/fixtures/must_write_error.txt")]
+#![doc = "```"]
 //!
-//! Help the caller diagnose the issue, fix it, and retry the call.
+//! ## Better error handling
 //!
-//! ## Approach
+//! **Goal**: Help the caller diagnose the issue, fix it, and retry the call.
 //!
-//! Every error must be represented by a unique enum variant with relevant fields.
+//! **Approach**: Every error must be represented by a unique enum variant with relevant fields.
 //!
-//! ## Guidelines
-//!
-//! ### General
+//! ### Guidelines
 //!
 //! * Every error type must be an enum
 //! * Every error enum variant must be a struct variant
@@ -151,6 +156,7 @@
 //!
 //! * `RestClient` doesn't point to the actual data, it only allows querying it.
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
+//!
 
 extern crate core;
 

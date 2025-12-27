@@ -75,7 +75,7 @@ mod tests {
                         },
                         UpdateRowError::I18nRequestFailed {
                             source: I18nRequestError::RequestSendFailed {
-                                source: tokio::io::Error::new(tokio::io::ErrorKind::AddrNotAvailable, "address 239.143.73.1 is not available"),
+                                source: tokio::io::Error::new(tokio::io::ErrorKind::AddrNotAvailable, "server at 239.143.73.1 did not respond"),
                             },
                             row: Row::new("Bar"),
                         },

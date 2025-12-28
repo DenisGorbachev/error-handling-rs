@@ -1,6 +1,8 @@
 mod get_root_error;
+mod partition_result;
 
 pub use get_root_error::*;
+pub use partition_result::*;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {

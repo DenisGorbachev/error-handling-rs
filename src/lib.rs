@@ -14,14 +14,14 @@
 //! #[derive(Serialize, Deserialize)]
 //! struct Config {/* some fields */}
 //!
-//! // traditional error handling
+//! // bad: doesn't return the path to config (the user won't be able to fix it)
 //! fn parse_config_v1(path: PathBuf) -> io::Result<Config> {
 //!     let contents = read_to_string(&path)?;
 //!     let config = from_str(&contents).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 //!     Ok(config)
 //! }
 //!
-//! // better error handling
+//! // good: returns the path to config & the underlying deserialization error (the user will be able fix it)
 //! fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
 //!     use ParseConfigError::*;
 //!     let contents = handle!(read_to_string(&path), ReadToStringFailed, path);
@@ -48,9 +48,9 @@
 //!
 //! * `parse_config_v2` is longer
 //!
-//! In short, `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it's better to use this approach, which provides you with better errors.
+//! That means `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach, which provides you with better errors.
 //!
-//! This crates provides the handle family of macros which simplify writing comprehensive error handling code.
+//! This crates provides the `handle` family of macros to simplify the error handling code.
 //!
 //! # Better debugging
 //!

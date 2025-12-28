@@ -12,14 +12,14 @@ Macros for ergonomic error handling with [thiserror][__link0].
 #[derive(Serialize, Deserialize)]
 struct Config {/* some fields */}
 
-// traditional error handling
+// bad: doesn't return the path to config (the user won't be able to fix it)
 fn parse_config_v1(path: PathBuf) -> io::Result<Config> {
     let contents = read_to_string(&path)?;
     let config = from_str(&contents).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     Ok(config)
 }
 
-// better error handling
+// good: returns the path to config & the underlying deserialization error (the user will be able fix it)
 fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
     use ParseConfigError::*;
     let contents = handle!(read_to_string(&path), ReadToStringFailed, path);
@@ -46,9 +46,9 @@ Disadvantages:
 
 * `parse_config_v2` is longer
 
-In short, `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, with LLMs, it’s better to use this approach, which provides you with better errors.
+That means `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, it’s better to use a more verbose approach, which provides you with better errors.
 
-This crates provides the handle family of macros which simplify writing comprehensive error handling code.
+This crates provides the `handle` family of macros to simplify the error handling code.
 
 ## Better debugging
 
@@ -145,7 +145,7 @@ For example:
 * `DatabaseConnection` doesn’t hold the actual data, it only allows querying it.
 
   <!-- markdownlint-disable-next-line MD053 -->
-   [__cargo_doc2readme_dependencies_info]: ggGkYW0BYXSEGwRMRGbH1AbAG78ahRChZMnDG7NOmnrbzMhqG4hAmpcrnsxRYXKEGzPQxgXwkxPPG2GAZGf801OfG8YfY5gMWcsTG0R6SMMw4sERYWSBgmtleGl0X3Jlc3VsdPY
+   [__cargo_doc2readme_dependencies_info]: ggGkYW0BYXSEGwRMRGbH1AbAG78ahRChZMnDG7NOmnrbzMhqG4hAmpcrnsxRYXKEG0RvFLPGYvlbG2WceJInOl1IG8pEzN4c4MWOG23dvXOrkdvFYWSBgmtleGl0X3Jlc3VsdPY
 
  [__link0]: https://crates.io/crates/thiserror
  [__link1]: https://crates.io/crates/exit_result

@@ -1,0 +1,5 @@
+- bar failed
+- zeds failed
+- encountered 2 errors
+  * ksa failed
+  * pry failed

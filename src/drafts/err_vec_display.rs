@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Write as FmtWrite};
 use thiserror::Error;
 
 /// This type is an attempt to implement error display for multiple errors through [`Display`] trait
@@ -10,18 +10,27 @@ pub struct ErrVecDisplay<T> {
 
 impl<T: Error + 'static> Display for ErrVecDisplay<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("encountered {len} errors\n", len = self.inner.len()))?;
-        for err in &self.inner {
-            print_error(err, "  * ".to_string());
-        }
-        Ok(())
+        write!(f, "encountered {len} errors", len = self.inner.len())?;
+        self.inner.iter().try_for_each(|err| {
+            f.write_str("\n")?;
+            write_error_chain(f, err, "  * ")
+        })
     }
 }
 
-pub fn print_error(error: &(dyn Error + 'static), prefix: String) {
-    println!("{prefix}{error}");
+pub fn format_error_chain(error: &(dyn Error + 'static), prefix: impl AsRef<str>) -> Result<String, std::fmt::Error> {
+    let mut output = String::new();
+    write_error_chain(&mut output, error, prefix.as_ref())?;
+    Ok(output)
+}
+
+fn write_error_chain(writer: &mut impl FmtWrite, error: &(dyn Error + 'static), prefix: &str) -> std::fmt::Result {
+    write!(writer, "{prefix}{error}")?;
     if let Some(source) = error.source() {
-        print_error(source, prefix);
+        writer.write_str("\n")?;
+        write_error_chain(writer, source, prefix)
+    } else {
+        Ok(())
     }
 }
 
@@ -51,13 +60,18 @@ mod tests {
 
     #[test]
     fn must_err_vec_try() {
-        let error = FooError::BarFailed {
-            source: BarError::ZedsFailed {
+        use BarError::*;
+        use FooError::*;
+        use ZedError::*;
+
+        let error = BarFailed {
+            source: ZedsFailed {
                 source: ErrVecDisplay {
-                    inner: vec![ZedError::KsaFailed, ZedError::PryFailed],
+                    inner: vec![KsaFailed, PryFailed],
                 },
             },
         };
-        print_error(&error, "- ".to_string());
+        let output = format_error_chain(&error, "- ").unwrap();
+        assert_eq!(output, include_str!("err_vec_display/fixtures/must_err_vec_display.txt"));
     }
 }

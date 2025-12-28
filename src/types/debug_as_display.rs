@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use core::fmt::{Debug, Display, Formatter};
 
 /// A wrapper that renders `Debug` using the inner type's `Display` implementation.
 /// This wrapper is needed for types that have an easy-to-understand `Display` impl but hard-to-understand `Debug` impl.
@@ -9,13 +9,13 @@ pub struct DebugAsDisplay<T: Display>(
 );
 
 impl<T: Display> Debug for DebugAsDisplay<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
 impl<T: Display> Display for DebugAsDisplay<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         Display::fmt(&self.0, f)
     }
 }

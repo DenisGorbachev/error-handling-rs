@@ -181,7 +181,7 @@ macro_rules! _index_err_async {
     };
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use crate::{ErrVec, PathBufDisplay};
     use futures::future::join_all;

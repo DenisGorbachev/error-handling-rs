@@ -1,4 +1,4 @@
-use std::error::Error;
+use core::error::Error;
 
 /// Returns the deepest source error in the error chain (the root cause).
 pub fn get_root_source(error: &dyn Error) -> &dyn Error {

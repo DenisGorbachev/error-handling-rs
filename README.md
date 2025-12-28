@@ -145,7 +145,7 @@ For example:
 * `DatabaseConnection` doesn’t hold the actual data, it only allows querying it.
 
   <!-- markdownlint-disable-next-line MD053 -->
-   [__cargo_doc2readme_dependencies_info]: ggGkYW0BYXSEGwRMRGbH1AbAG78ahRChZMnDG7NOmnrbzMhqG4hAmpcrnsxRYXKEG0RvFLPGYvlbG2WceJInOl1IG8pEzN4c4MWOG23dvXOrkdvFYWSBgmtleGl0X3Jlc3VsdPY
+   [__cargo_doc2readme_dependencies_info]: ggGkYW0BYXSEGwRMRGbH1AbAG78ahRChZMnDG7NOmnrbzMhqG4hAmpcrnsxRYXKEGw_dgGbgzwelG-6wAdTVdYO-G9yaiZ2xDHCeGzW3sLmAtW8aYWSBgmtleGl0X3Jlc3VsdPY
 
  [__link0]: https://crates.io/crates/thiserror
  [__link1]: https://crates.io/crates/exit_result

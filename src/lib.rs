@@ -3,6 +3,8 @@
 //! # Example
 //!
 //! ```rust
+//! # #[cfg(feature = "std")]
+//! # {
 //! # use std::io;
 //! # use std::fs::read_to_string;
 //! # use std::path::{Path, PathBuf};
@@ -36,6 +38,7 @@
 //!     #[error("failed to parse the file contents into config: '{}'", path.display())]
 //!     DeserializeFailed { path: PathBuf, contents: String, source: serde_json::Error }
 //! }
+//! # }
 //! ```
 //!
 //! Advantages:
@@ -57,6 +60,8 @@
 //! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
 //!
 //! ```rust
+//! # #[cfg(feature = "std")]
+//! # {
 //! # use errgonomic::exit_result;
 //! # use thiserror::Error;
 //! # use std::process::ExitCode;
@@ -69,6 +74,7 @@
 //! pub fn main() -> ExitCode {
 //!     exit_result(run())
 //! }
+//! # }
 //! ```
 //!
 //! This will produce a nice "error trace" like below:

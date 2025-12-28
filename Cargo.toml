@@ -9,7 +9,7 @@ homepage = "https://github.com/DenisGorbachev/errgonomic"
 repository = "https://github.com/DenisGorbachev/errgonomic"
 readme = "README.md"
 keywords = ["error-handling", "utils", "macros"]
-categories = ["rust-patterns", "development-tools", "development-tools::debugging"]
+categories = ["rust-patterns", "development-tools", "development-tools::debugging", "no-std"]
 
 [package.metadata.details]
 title = "Errgonomic"
@@ -22,8 +22,9 @@ readme = { generate = true }
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
-tempfile = "3"
-thiserror = "2"
+cfg-if = { version = "1.0.3" }
+tempfile = { version = "3", optional = true }
+thiserror = { version = "2", optional = true }
 
 [dev-dependencies]
 futures = "0.3.31"
@@ -32,3 +33,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
 tokio = { version = "1.39.2", features = ["macros", "fs", "net", "rt", "rt-multi-thread"] }
 toml = "0.9.5"
+
+[features]
+default = ["std"]
+std = ["tempfile", "thiserror"]

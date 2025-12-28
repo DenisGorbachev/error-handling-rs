@@ -156,6 +156,9 @@
 //! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
 //!
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 extern crate core;
 
 mod macros;

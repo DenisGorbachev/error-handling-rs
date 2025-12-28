@@ -7,6 +7,7 @@ import {z, ZodSchema, ZodTypeDef} from "https://deno.land/x/zod@v3.23.8/mod.ts"
 import {assert, assertEquals} from "jsr:@std/assert@1.0.0"
 import {toSnakeCase} from "jsr:@std/text@1.0.10"
 import {parseArgs} from "jsr:@std/cli@1.0.13"
+import {basename} from "jsr:@std/path@1.1.4"
 import {parse as parseToml} from "jsr:@std/toml@1.0.5"
 
 export const args = parseArgs(Deno.args, {
@@ -158,46 +159,38 @@ const primaryTargets = [primaryTarget, primaryBinTarget]
 const secondaryTargets = thePackageMetadata.targets.filter((t) => !primaryTargets.includes(t))
 const secondaryBinTargets = secondaryTargets.filter((t) => t.kind.includes("bin"))
 const docsUrl = `https://docs.rs/${name}`
-// NOTE: "<!-- markdownlint-disable-next-line MD053 -->" is needed to disable the warning about unused link: [__cargo_doc2readme_dependencies_info]
-const doc2ReadmeTemplate = `
-{{ readme }}
-
-{%- if links != "" %}
-  <!-- markdownlint-disable-next-line MD053 -->
-  {{ links }}
-{%- endif -%}
-`.trimStart()
-const doc2readmeRender = async (target: string) => {
-  const templatePath = await Deno.makeTempFile({
-    prefix: "README",
-    suffix: "jl",
-  })
-  await Deno.writeTextFile(
-    templatePath,
-    doc2ReadmeTemplate,
-  )
-  return $`cargo doc2readme --template ${templatePath} --target-name ${target} --out -`
-}
-
-const doc2ReadmePromise = doc2readmeRender(primaryTarget.name)
+const crateDocsPlaceholder = `
+<!-- crate documentation start -->
+<!-- crate documentation end -->
+`.trim()
 const docsUrlPromise = fetch(docsUrl, {method: "HEAD"})
 const helpPromise = primaryBinTarget ? $`cargo run --quiet --bin ${primaryBinTarget.name} -- --help` : undefined
 const ghRepoViewPromise = $`gh repo view --json url,visibility ${theOriginUrl}`.nothrow().quiet()
-
-const doc = await doc2ReadmePromise
-const docStr = doc.stdout.trim()
 
 const docsUrlHead = await docsUrlPromise
 const docsUrlIs200 = docsUrlHead.status === 200
 
 // Hack: await the promise instead of calling `then` because `then` has incorrect type in `zx`
+const insertCrateDocsIntoReadme = async (readmePath: string) => {
+  await $`cargo insert-docs crate-into-readme --allow-dirty --readme-path ${readmePath}`
+}
+
 const theGitHubRepo = await (async () => {
   const output = await ghRepoViewPromise
   if (output.exitCode === 0) {
     return parse(GitHubRepoSchema, output)
   } else {
     const text = output.text()
-    if (text.includes('argument error: expected the "[HOST/]OWNER/REPO" format')) {
+    const ghAuthErrorPatterns = [
+      "gh auth login",
+      "GH_TOKEN",
+      "GITHUB_TOKEN",
+      "not logged into any GitHub hosts",
+    ]
+    if (
+      text.includes('argument error: expected the "[HOST/]OWNER/REPO" format')
+      || ghAuthErrorPatterns.some((pattern) => text.includes(pattern))
+    ) {
       return null
     } else {
       throw new Error("Failure in ghRepoViewPromise: \n" + text)
@@ -232,7 +225,7 @@ const renderShellCode = (code: string) => `\`\`\`shell\n${code}\n\`\`\``
 
 const titleSectionBodyParts = [
   badgesStr,
-  docStr,
+  crateDocsPlaceholder,
 ].filter((s) => s.length)
 const titleSectionBody = titleSectionBodyParts.join("\n\n")
 
@@ -291,6 +284,15 @@ const content = contentArray.filter(s => s.length > 0).join("\n\n");
 
 if (args.output) {
   await Deno.writeTextFile(args.output, content + "\n")
+  await insertCrateDocsIntoReadme(args.output)
 } else {
-  console.info(content)
+  const tempReadmePath = await Deno.makeTempFile({
+    prefix: "README",
+    suffix: ".md",
+  })
+  await Deno.writeTextFile(tempReadmePath, content + "\n")
+  await insertCrateDocsIntoReadme(tempReadmePath)
+  const readme = await Deno.readTextFile(tempReadmePath)
+  await Deno.remove(tempReadmePath)
+  console.info(readme.trimEnd())
 }

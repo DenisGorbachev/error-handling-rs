@@ -2,8 +2,10 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut};
 
+/// An owned collection of errors that itself implements [`Error`].
 #[derive(Default, Debug)]
 pub struct ErrVec {
+    /// Collected errors stored as boxed trait objects.
     pub inner: Vec<Box<dyn Error + 'static>>,
 }
 
@@ -30,6 +32,7 @@ impl DerefMut for ErrVec {
 }
 
 impl ErrVec {
+    /// Builds an [`ErrVec`] by boxing each error from the iterator.
     pub fn new<E: Error + 'static>(iter: impl IntoIterator<Item = E>) -> Self {
         Self {
             inner: iter

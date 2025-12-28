@@ -1,9 +1,11 @@
-use crate::functions::write_to_named_temp_file;
-use crate::{ErrVec, Prefixer};
+use crate::{ErrVec, Prefixer, write_to_named_temp_file};
 use std::error::Error;
 use std::io;
 use std::io::{Write, stderr};
 
+/// Writes a human-readable error trace to the provided writer and persists the full debug output to a temp file.
+///
+/// This is useful for CLI tools that want a concise error trace on stderr and a path to a full report.
 pub fn writeln_error_to_writer_and_file(error: &(dyn Error + 'static), writer: &mut dyn Write) -> Result<(), io::Error> {
     writeln_error_to_writer(error, writer, true)?;
     writeln!(writer)?;
@@ -19,17 +21,19 @@ pub fn writeln_error_to_writer_and_file(error: &(dyn Error + 'static), writer: &
     }
 }
 
+/// Writes a human-readable error trace to the provided writer.
+///
+/// When the error is an [`ErrVec`], each element is rendered as a nested bullet list.
 pub fn writeln_error_to_writer(error: &(dyn Error + 'static), writer: &mut dyn Write, is_top_level: bool) -> Result<(), io::Error> {
     let source = error;
     if let Some(err_vec) = source.downcast_ref::<ErrVec>() {
         if is_top_level {
             writeln!(writer, "- {error}")?;
         }
-        for err in &err_vec.inner {
+        err_vec.inner.iter().try_for_each(|err| {
             let mut prefixer = error_prefixer(writer);
-            writeln_error_to_writer(err.as_ref(), &mut prefixer, false)?;
-        }
-        Ok(())
+            writeln_error_to_writer(err.as_ref(), &mut prefixer, false)
+        })
     } else {
         writeln!(writer, "- {error}")?;
         if let Some(source_new) = source.source() {
@@ -40,6 +44,7 @@ pub fn writeln_error_to_writer(error: &(dyn Error + 'static), writer: &mut dyn W
     }
 }
 
+/// Writes an error trace to stderr and, if possible, includes a path to the full error report.
 pub fn eprintln_error(error: &(dyn Error + 'static)) {
     let mut stderr = stderr().lock();
     let result = writeln_error_to_writer_and_file(error, &mut stderr);
@@ -49,6 +54,7 @@ pub fn eprintln_error(error: &(dyn Error + 'static)) {
     }
 }
 
+/// Builds a [`Prefixer`] suitable for nested error bullet lists.
 pub fn error_prefixer(writer: &mut dyn Write) -> Prefixer<'_> {
     Prefixer::new("  * ", "    ", writer)
 }

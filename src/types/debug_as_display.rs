@@ -1,8 +1,12 @@
 use std::fmt::{Debug, Display, Formatter};
 
-/// This wrapper is needed for types that have an easy-to-understand `Display` impl but hard-to-understand `Debug` impl
+/// A wrapper that renders `Debug` using the inner type's `Display` implementation.
+/// This wrapper is needed for types that have an easy-to-understand `Display` impl but hard-to-understand `Debug` impl.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
-pub struct DebugAsDisplay<T: Display>(pub T);
+pub struct DebugAsDisplay<T: Display>(
+    /// Inner value rendered with `Display` for both `Debug` and `Display`.
+    pub T,
+);
 
 impl<T: Display> Debug for DebugAsDisplay<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

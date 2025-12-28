@@ -2,6 +2,7 @@ use crate::eprintln_error;
 use std::error::Error;
 use std::process::ExitCode;
 
+/// Converts a `Result` into an [`ExitCode`], printing a detailed error trace on failure.
 pub fn exit_result<E: Error + 'static>(result: Result<(), E>) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,

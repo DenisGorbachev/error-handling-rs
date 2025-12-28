@@ -46,6 +46,9 @@ macro_rules! handle_opt_take {
     };
 }
 
+/// Returns an error when the condition is true.
+///
+/// This is useful for guard checks that should fail fast with a specific error variant.
 #[macro_export]
 macro_rules! handle_bool {
     ($condition:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
@@ -57,7 +60,9 @@ macro_rules! handle_bool {
     };
 }
 
-/// `$results` must be an `impl Iterator<Item = Result<T, E>>`
+/// Collects results from an iterator, returning a variant that wraps all errors.
+///
+/// `$results` must be an `impl Iterator<Item = Result<T, E>>`.
 #[macro_export]
 macro_rules! handle_iter {
     ($results:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
@@ -75,30 +80,33 @@ macro_rules! handle_iter {
     };
 }
 
-/// Note that this macro returns an expression that evaluates to a tuple of `(outputs, items)`. This is necessary because the iteration consumes items, which might actually be relevant to the subsequent code
-/// If the errors are empty, then `items.len() == outputs.len()`
-/// Note that the `results` iterator might abort early without consuming all items. In this case, the `items` will contain less elements than prior to this macro invocation
+/// Collects results while keeping the corresponding input items, returning `(outputs, items)` on success.
+///
+/// This macro returns a tuple because the iteration consumes items that may be needed later.
+/// If there are no errors, `items.len() == outputs.len()`.
+/// If the results iterator terminates early, the returned `items` may be shorter than the original input.
 #[macro_export]
 macro_rules! handle_iter_of_refs {
     ($results:expr, $items:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
         {
-            let mut outputs = Vec::new();
-            let mut items = Vec::new();
-            let mut errors = Vec::new();
-            for (result, item) in std::iter::zip($results, $items) {
-                match result {
-                    Ok(output) => {
-                        outputs.push(output);
-                        items.push(item);
-                    },
-                    Err(source) => {
-                        errors.push($crate::ItemError {
-                            item,
-                            source,
-                        });
+            let (outputs, items, errors) = std::iter::zip($results, $items).fold(
+                (Vec::new(), Vec::new(), Vec::new()),
+                |(mut outputs, mut items, mut errors), (result, item)| {
+                    match result {
+                        Ok(output) => {
+                            outputs.push(output);
+                            items.push(item);
+                        }
+                        Err(source) => {
+                            errors.push($crate::ItemError {
+                                item,
+                                source,
+                            });
+                        }
                     }
-                }
-            }
+                    (outputs, items, errors)
+                },
+            );
             if errors.is_empty() {
                 (outputs, items)
             } else {
@@ -111,7 +119,7 @@ macro_rules! handle_iter_of_refs {
     };
 }
 
-/// `$results` must be an `impl IntoIterator<Item = Result<T, E>>`
+/// Collects results from any `IntoIterator`, wrapping all errors into one variant.
 #[macro_export]
 macro_rules! handle_into_iter {
     ($results:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
@@ -144,6 +152,7 @@ macro_rules! map_err {
 }
 
 /// Internal
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _into {
     ($arg:ident) => {
@@ -155,6 +164,7 @@ macro_rules! _into {
 }
 
 /// Internal
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _index_err {
     ($f:ident) => {
@@ -163,6 +173,7 @@ macro_rules! _index_err {
 }
 
 /// Internal
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _index_err_async {
     ($f:ident) => {

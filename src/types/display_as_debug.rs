@@ -1,7 +1,11 @@
 use std::fmt::{Debug, Display, Formatter};
 
+/// A wrapper that renders `Display` using the inner type's `Debug` implementation.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Debug)]
-pub struct DisplayAsDebug<T: Debug>(pub T);
+pub struct DisplayAsDebug<T: Debug>(
+    /// Inner value rendered with `Debug` for `Display`.
+    pub T,
+);
 
 impl<T: Debug> Display for DisplayAsDebug<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

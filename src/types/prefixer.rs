@@ -1,12 +1,20 @@
 use std::fmt;
 use std::io::{self, Write};
 
-/// This type uses a `dyn Write` instead of `impl Write` to avoid a trait-recursion explosion in [`crate::writeln_error_to_writer`]
+/// A [`Write`] adapter that prefixes each written line.
+///
+/// This type uses a `dyn Write` instead of `impl Write` to avoid a trait-recursion explosion in
+/// [`crate::writeln_error_to_writer`].
 pub struct Prefixer<'w> {
+    /// Prefix for the very first line.
     pub first_line_prefix: String,
+    /// Prefix for subsequent lines.
     pub next_line_prefix: String,
+    /// The underlying writer.
     pub writer: &'w mut dyn Write,
+    /// Whether the next write is still on the first line.
     pub is_first_line: bool,
+    /// Whether the next write should include a prefix.
     pub needs_prefix: bool,
 }
 
@@ -22,6 +30,7 @@ impl<'w> fmt::Debug for Prefixer<'w> {
 }
 
 impl<'w> Prefixer<'w> {
+    /// Creates a new prefixing writer with the provided line prefixes.
     pub fn new(first_line_prefix: impl Into<String>, next_line_prefix: impl Into<String>, writer: &'w mut dyn Write) -> Self {
         Self {
             first_line_prefix: first_line_prefix.into(),

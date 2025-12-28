@@ -1,8 +1,6 @@
-//! # Errgonomic
-//!
 //! Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
 //!
-//! ## Example
+//! # Example
 //!
 //! ```rust
 //! # use std::io;
@@ -54,7 +52,7 @@
 //!
 //! This crates provides the handle family of macros which simplify writing comprehensive error handling code.
 //!
-//! ## Better debugging
+//! # Better debugging
 //!
 //! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
 //!
@@ -78,13 +76,13 @@
 #![doc = include_str!("./functions/writeln_error/fixtures/must_write_error.txt")]
 #![doc = "```"]
 //!
-//! ## Better error handling
+//! # Better error handling
 //!
 //! **Goal**: Help the caller diagnose the issue, fix it, and retry the call.
 //!
 //! **Approach**: Every error must be represented by a unique enum variant with relevant fields.
 //!
-//! ### Guidelines
+//! ## Guidelines
 //!
 //! * Every error type must be an enum
 //! * Every error enum variant must be a struct variant
@@ -105,12 +103,12 @@
 //! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 //! * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
 //!
-//! ### Conveniences
+//! ## Conveniences
 //!
 //! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum (for example: `use ParseConfigError::*;`)
 //! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 //!
-//! ### Naming
+//! ## Naming
 //!
 //! * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
 //! * The name of the error enum variant should end with `Failed` or `NotFound` or `Invalid` (for example: `ReadFileFailed`, `UserNotFound`, `PasswordInvalid`)
@@ -121,7 +119,7 @@
 //!   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
 //! * If the error enum is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
 //!
-//! ## Macros
+//! # Macros
 //!
 //! Use the following macros for more concise error handling:
 //!
@@ -132,13 +130,13 @@
 //! * [`handle_iter_of_refs!`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
 //! * [`handle_into_iter!`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
 //!
-//! ## Definitions
+//! # Definitions
 //!
-//! ### Fallible expression
+//! ## Fallible expression
 //!
 //! An expression that returns a [`Result`].
 //!
-//! ### Data type
+//! ## Data type
 //!
 //! A type that holds the actual data.
 //!
@@ -148,7 +146,7 @@
 //! * `String`
 //! * `PathBuf`
 //!
-//! ### Non-data type
+//! ## Non-data type
 //!
 //! A type that doesn't hold the actual data.
 //!

@@ -3,19 +3,20 @@ name = "errgonomic"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85.0"
-description = "Error handling best practices"
+description = "Macros for ergonomic error handling with thiserror"
 license = "Apache-2.0 OR MIT"
-homepage = "https://github.com/DenisGorbachev/error-handling-rs"
-repository = "https://github.com/DenisGorbachev/error-handling-rs"
-keywords = []
-categories = []
+homepage = "https://github.com/DenisGorbachev/errgonomic"
+repository = "https://github.com/DenisGorbachev/errgonomic"
+readme = "README.md"
+keywords = ["error-handling", "utils", "macros"]
+categories = ["rust-patterns", "development-tools", "development-tools::debugging"]
 
 [package.metadata.details]
-title = "Error handling utilities"
+title = "Errgonomic"
 tagline = ""
 summary = ""
 announcement = ""
-readme = { generate = false }
+readme = { generate = true }
 
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]

@@ -4,7 +4,8 @@
 
 # Errgonomic
 
-Macros for ergonomic error handling with [thiserror][__link0].
+<!-- crate documentation start -->
+Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
 
 ## Example
 
@@ -46,13 +47,13 @@ Disadvantages:
 
 * `parse_config_v2` is longer
 
-That means `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, it’s better to use a more verbose approach, which provides you with better errors.
+That means `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach, which provides you with better errors.
 
 This crates provides the `handle` family of macros to simplify the error handling code.
 
 ## Better debugging
 
-To improve your debugging experience: call [`exit_result`][__link1] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
+To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
 
 ```rust
 pub fn main() -> ExitCode {
@@ -60,9 +61,17 @@ pub fn main() -> ExitCode {
 }
 ```
 
-This will produce a nice “error trace” like below:
-
+This will produce a nice "error trace" like below:
 ```text
+- failed to run CLI command
+- failed to run i18n update command
+- failed to update 2 rows
+  * - failed to send an i18n request for row 'Foo'
+    - failed to construct a JSON schema
+    - input must be an object
+  * - failed to send an i18n request for row 'Bar'
+    - failed to send a request
+    - server at 239.143.73.1 did not respond
 ```
 
 ## Better error handling
@@ -71,19 +80,19 @@ This will produce a nice “error trace” like below:
 
 **Approach**: Every error must be represented by a unique enum variant with relevant fields.
 
-### Guidelines
+## Guidelines
 
 * Every error type must be an enum
 * Every error enum variant must be a struct variant
 * Every error enum variant must contain one field per owned variable that is relevant to the fallible expression that this variant wraps
-  * The relevant variable is a variable whose value determines whether the fallible expression returns an [`Ok`][__link2] or an [`Err`][__link3]
+  * The relevant variable is a variable whose value determines whether the fallible expression returns an `Ok` or an `Err`
 * Every error enum variant must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
 * Every error enum variant field must have an owned type (not a reference)
 * Every error enum should be located below the function that returns it (in the same file)
 * Every fallible function must return a unique error type
 * Every call to another fallible function must be wrapped in a unique error enum variant
 * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
-* Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn’t output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`][__link4])
+* Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
 * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
 * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
 * If the error enum variant has a `source` field, then this field must be the first field
@@ -92,12 +101,12 @@ This will produce a nice “error trace” like below:
 * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
 
-### Conveniences
+## Conveniences
 
-* Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function’s error enum (for example: `use ParseConfigError::*;`)
+* Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum (for example: `use ParseConfigError::*;`)
 * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 
-### Naming
+## Naming
 
 * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
 * The name of the error enum variant should end with `Failed` or `NotFound` or `Invalid` (for example: `ReadFileFailed`, `UserNotFound`, `PasswordInvalid`)
@@ -106,26 +115,26 @@ This will produce a nice “error trace” like below:
   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
   * If the function is an associated function, the name of the error type must be exactly equal to the name of the type without generics concatenated with the name of the function in CamelCase concatenated with `Error`
   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
-* If the error enum is defined for a `TryFrom<A> for B` impl, then its name must be equal to “Convert{A}To{B}Error”
+* If the error enum is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
 
 ## Macros
 
 Use the following macros for more concise error handling:
 
-* [`handle!`][__link5] instead of [`Result::map_err`][__link6]
-* [`handle_opt!`][__link7] instead of [`Option::ok_or`][__link8] and [`Option::ok_or_else`][__link9]
-* [`handle_bool!`][__link10] instead of `if condition { return Err(...) }`
-* [`handle_iter!`][__link11] instead of code that handles errors in iterators
-* [`handle_iter_of_refs!`][__link12] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
-* [`handle_into_iter!`][__link13] replaces the code that handles errors in collections that implement [`IntoIterator`][__link14] (including [`Vec`][__link15] and [`HashMap`][__link16]
+* [`handle!`] instead of `Result::map_err`
+* [`handle_opt!`] instead of `Option::ok_or` and `Option::ok_or_else`
+* [`handle_bool!`] instead of `if condition { return Err(...) }`
+* [`handle_iter!`] instead of code that handles errors in iterators
+* [`handle_iter_of_refs!`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
+* [`handle_into_iter!`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](https://doc.rust-lang.org/std/collections/hash/map/struct.HashMap.html)
 
 ## Definitions
 
-### Fallible expression
+## Fallible expression
 
-An expression that returns a [`Result`][__link17].
+An expression that returns a [`Result`].
 
-### Data type
+## Data type
 
 A type that holds the actual data.
 
@@ -135,36 +144,27 @@ For example:
 * `String`
 * `PathBuf`
 
-### Non-data type
+## Non-data type
 
-A type that doesn’t hold the actual data.
+A type that doesn't hold the actual data.
 
 For example:
 
-* `RestClient` doesn’t point to the actual data, it only allows querying it.
-* `DatabaseConnection` doesn’t hold the actual data, it only allows querying it.
+* `RestClient` doesn't point to the actual data, it only allows querying it.
+* `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
 
-  <!-- markdownlint-disable-next-line MD053 -->
-   [__cargo_doc2readme_dependencies_info]: ggGkYW0BYXSEGwRMRGbH1AbAG78ahRChZMnDG7NOmnrbzMhqG4hAmpcrnsxRYXKEGw_dgGbgzwelG-6wAdTVdYO-G9yaiZ2xDHCeGzW3sLmAtW8aYWSBgmtleGl0X3Jlc3VsdPY
+[`IntoIterator`]: https://doc.rust-lang.org/core/iter/traits/collect/trait.IntoIterator.html
+[`Result`]: https://doc.rust-lang.org/core/result/enum.Result.html
+[`Vec`]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
+[`exit_result`]: https://docs.rs/errgonomic/latest/errgonomic/fn.exit_result.html
+[`handle!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle.html
+[`handle_bool!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle_bool.html
+[`handle_into_iter!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle_into_iter.html
+[`handle_iter!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle_iter.html
+[`handle_iter_of_refs!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle_iter_of_refs.html
+[`handle_opt!`]: https://docs.rs/errgonomic/latest/errgonomic/macro.handle_opt.html
 
- [__link0]: https://crates.io/crates/thiserror
- [__link1]: https://crates.io/crates/exit_result
- [__link10]: `handle_bool!`
- [__link11]: `handle_iter!`
- [__link12]: `handle_iter_of_refs!`
- [__link13]: `handle_into_iter!`
- [__link14]: https://doc.rust-lang.org/stable/std/iter/trait.IntoIterator.html
- [__link15]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
- [__link16]: https://doc.rust-lang.org/stable/std/?search=collections::HashMap
- [__link17]: https://doc.rust-lang.org/stable/std/result/struct.Result.html
- [__link2]: https://doc.rust-lang.org/stable/std/?search=result::Result::Ok
- [__link3]: https://doc.rust-lang.org/stable/std/?search=result::Result::Err
- [__link4]: https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html
- [__link5]: `handle!`
- [__link6]: https://doc.rust-lang.org/stable/std/?search=result::Result::map_err
- [__link7]: `handle_opt!`
- [__link8]: https://doc.rust-lang.org/stable/std/?search=option::Option::ok_or
- [__link9]: https://doc.rust-lang.org/stable/std/?search=option::Option::ok_or_else
+<!-- crate documentation end -->
 
 ## Installation
 

@@ -80,7 +80,7 @@ This will produce a nice "error trace" like below:
 
 **Approach**: Every error must be represented by a unique enum variant with relevant fields.
 
-## Guidelines
+### Guidelines
 
 * Every error type must be an enum
 * Every error enum variant must be a struct variant
@@ -101,12 +101,12 @@ This will produce a nice "error trace" like below:
 * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
 
-## Conveniences
+### Conveniences
 
 * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum (for example: `use ParseConfigError::*;`)
 * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
 
-## Naming
+### Naming
 
 * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
 * The name of the error enum variant should end with `Failed` or `NotFound` or `Invalid` (for example: `ReadFileFailed`, `UserNotFound`, `PasswordInvalid`)
@@ -130,11 +130,11 @@ Use the following macros for more concise error handling:
 
 ## Definitions
 
-## Fallible expression
+### Fallible expression
 
 An expression that returns a [`Result`].
 
-## Data type
+### Data type
 
 A type that holds the actual data.
 
@@ -144,7 +144,7 @@ For example:
 * `String`
 * `PathBuf`
 
-## Non-data type
+### Non-data type
 
 A type that doesn't hold the actual data.
 

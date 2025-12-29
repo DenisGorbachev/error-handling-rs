@@ -51,13 +51,13 @@
 //!
 //! * `parse_config_v2` is longer
 //!
-//! That means `parse_config_v2` is strictly better but requires more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach, which provides you with better errors.
+//! That means `parse_config_v2` is strictly better but requires writing more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach `v2`, which provides you with better errors.
 //!
 //! This crates provides the `handle` family of macros to simplify the error handling code.
 //!
 //! ## Better debugging
 //!
-//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error (see example below).
+//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error:
 //!
 //! ```rust
 //! # #[cfg(feature = "std")]
@@ -133,8 +133,8 @@
 //! * [`handle_opt!`] instead of [`Option::ok_or`] and [`Option::ok_or_else`]
 //! * [`handle_bool!`] instead of `if condition { return Err(...) }`
 //! * [`handle_iter!`] instead of code that handles errors in iterators
-//! * [`handle_iter_of_refs!`] instead of the code handles errors in iterators of references (where the values are still being owned by the underlying collection)
-//! * [`handle_into_iter!`] replaces the code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
+//! * [`handle_iter_of_refs!`] instead of code that handles errors in iterators of references (where the values are still being owned by the underlying collection)
+//! * [`handle_into_iter!`] instead of code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
 //!
 //! ## Definitions
 //!

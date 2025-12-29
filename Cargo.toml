@@ -13,6 +13,8 @@ categories = ["rust-patterns", "development-tools", "development-tools::debuggin
 exclude = [
     ".*",
     "*.local.*",
+    "doc/dev",
+    "specs",
     "README.ts",
     "AGENTS*.md",
     "CLAUDE*.md",

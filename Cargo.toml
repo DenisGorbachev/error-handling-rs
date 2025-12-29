@@ -26,6 +26,7 @@ exclude = [
     "rustfmt.toml",
     "yolobox"
 ]
+# "internal" dir should be included
 
 [package.metadata.details]
 title = "Errgonomic"

@@ -89,6 +89,7 @@ macro_rules! handle_iter {
 macro_rules! handle_iter_of_refs {
     ($results:expr, $items:expr, $variant:ident $(, $arg:ident$(: $value:expr)?)*) => {
         {
+            use alloc::vec::Vec;
             let (outputs, items, errors) = core::iter::zip($results, $items).fold(
                 (Vec::new(), Vec::new(), Vec::new()),
                 |(mut outputs, mut items, mut errors), (result, item)| {

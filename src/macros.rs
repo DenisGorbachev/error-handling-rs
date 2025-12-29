@@ -67,14 +67,14 @@ macro_rules! handle_bool {
 macro_rules! handle_iter {
     ($results:expr, $variant:ident$(,)? $($arg:ident$(: $value:expr)?),*) => {
         {
-            let (oks, errors): (Vec<_>, Vec<_>) = itertools::Itertools::partition_result($results);
-            if errors.is_empty() {
-                oks
-            } else {
-                return Err($variant {
-                    source: errors.into(),
-                    $($arg: $crate::_into!($arg$(: $value)?)),*
-                });
+            match $crate::partition_result($results) {
+                Ok(oks) => oks,
+                Err(errors) => {
+                    return Err($variant {
+                        source: errors.into(),
+                        $($arg: $crate::_into!($arg$(: $value)?)),*
+                    });
+                }
             }
         }
     };

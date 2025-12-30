@@ -4,6 +4,7 @@
 
 # Errgonomic
 
+[![Build](https://github.com/DenisGorbachev/errgonomic/actions/workflows/ci.yml/badge.svg)](https://github.com/DenisGorbachev/errgonomic)
 [![Documentation](https://docs.rs/errgonomic/badge.svg)](https://docs.rs/errgonomic)
 
 <!-- crate documentation start -->

@@ -33,9 +33,9 @@ fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
 
 #[derive(Error, Debug)]
 enum ParseConfigError {
-    #[error("failed to read file to string: '{}'", path.display())]
+    #[error("failed to read file to string: '{path}'")]
     ReadToStringFailed { path: PathBuf, source: std::io::Error },
-    #[error("failed to parse the file contents into config: '{}'", path.display())]
+    #[error("failed to parse the file contents into config: '{path}'")]
     DeserializeFailed { path: PathBuf, contents: String, source: serde_json::Error }
 }
 ```

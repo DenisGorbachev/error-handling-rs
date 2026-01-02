@@ -4,6 +4,8 @@
 
 # Errgonomic
 
+[![Documentation](https://docs.rs/errgonomic/badge.svg)](https://docs.rs/errgonomic)
+
 <!-- crate documentation start -->
 Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
 

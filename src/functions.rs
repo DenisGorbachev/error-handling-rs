@@ -14,3 +14,5 @@ cfg_if::cfg_if! {
         pub use exit_result::*;
     }
 }
+mod fmt;
+pub use fmt::*;

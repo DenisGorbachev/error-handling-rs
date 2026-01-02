@@ -177,5 +177,9 @@ mod functions;
 
 pub use functions::*;
 
+mod traits;
+
+pub use traits::*;
+
 #[cfg(all(test, feature = "std"))]
 mod drafts;

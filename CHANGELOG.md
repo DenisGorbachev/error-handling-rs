@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/DenisGorbachev/errgonomic/compare/v0.2.2...v0.3.0) - 2026-01-03
+
+### Added
+
+- implement AGENTS script
+
+### Fixed
+
+- AGENTS
+- fenced code blocks
+- handle backticks in code fences
+- render code blocks in agents output
+- update errgonomic
+- AGENTS
+- AGENTS
+- update errgonomic
+
+### Other
+
+- resolve parts with Promise.all
+- build parts array inline
+- update file existence check
+- add includeFileIfExists
+
 ## [0.2.2](https://github.com/DenisGorbachev/errgonomic/compare/v0.2.1...v0.2.2) - 2025-12-30
 
 ### Added

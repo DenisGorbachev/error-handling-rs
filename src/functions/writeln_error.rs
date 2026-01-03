@@ -4,65 +4,22 @@ use core::fmt::Formatter;
 use std::io;
 use std::io::{Write, stderr};
 
-// pub struct Displayer<'a, E: ?Sized>(pub &'a E);
-//
-// impl<'a, E: Error + ?Sized> DoDisplay for &&Displayer<'a, E> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-//         writeln!(f, "- {}", self.0)?;
-//         if let Some(source) = self.0.source() {
-//             let error_display = Displayer(source);
-//             DoDisplay::fmt(&&&error_display, f)
-//         } else {
-//             Ok(())
-//         }
-//     }
-// }
-//
-// impl<'a, E: Display + ?Sized> DoDisplay for &Displayer<'a, E> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-//         writeln!(f, "- {}", self.0)
-//     }
-// }
-//
-// /// Fallback impl
-// impl<'a, E: ?Sized> DoDisplay for Displayer<'a, E> {
-//     fn fmt(&self, _f: &mut Formatter<'_>) -> core::fmt::Result {
-//         Err(core::fmt::Error)
-//     }
-// }
-//
-// impl<E: DoWrite> DoWrite for &Displayer<'_, E> {
-//     fn do_write(&self, writer: &mut dyn Write) -> Result<(), io::Error> {
-//         self.0.do_write(writer)
-//     }
-// }
-//
-// impl<E: Error + ?Sized> DoWrite for Displayer<'_, E> {
-//     fn do_write(&self, writer: &mut dyn Write) -> Result<(), io::Error> {
-//         writeln!(writer, "- {}", self.0)?;
-//         if let Some(source_new) = self.0.source() {
-//             let source_error_display = Displayer(source_new);
-//             writeln_error_to_writer_dyn(&source_error_display, writer, false)
-//         } else {
-//             Ok(())
-//         }
-//     }
-// }
-//
-// /// This impl is needed to allow using `ErrorDisplay` values in built-in macros ([`write!`](core::fmt::write), [`writeln!`](core::fmt::writeln), [`format_args!`]) that call `Display::fmt` or `Debug::fmt`
-// impl<'a, E: ?Sized> Display for Displayer<'a, E> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-//         DoDisplay::fmt(self, f)
-//     }
-// }
+/// Writes a human-readable error trace to the provided formatter.
+pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, f: &mut Formatter<'_>) -> core::fmt::Result {
+    use std::fmt::Write;
+    write!(f, "- {error}")?;
+    if let Some(source_new) = error.source() {
+        f.write_char('\n')?;
+        writeln_error_to_formatter(source_new, f)
+    } else {
+        Ok(())
+    }
+}
 
 /// Writes a human-readable error trace to the provided writer and persists the full debug output to a temp file.
 ///
 /// This is useful for CLI tools that want a concise error trace on stderr and a path to a full report.
-pub fn writeln_error_to_writer_and_file<E>(error: &E, writer: &mut dyn Write) -> Result<(), io::Error>
-where
-    E: Error + 'static,
-{
+pub fn writeln_error_to_writer_and_file<E: Error>(error: &E, writer: &mut dyn Write) -> Result<(), io::Error> {
     writeln!(writer, "{error}")?;
     writeln!(writer)?;
     let error_debug = format!("{error:#?}");
@@ -74,32 +31,6 @@ where
         Err(other_error) => {
             writeln!(writer, "{other_error:#?}")
         }
-    }
-}
-
-// /// Writes a human-readable error trace to the provided writer.
-// ///
-// /// When the error is an [`ErrVec`], each element is rendered as a nested bullet list.
-// pub fn writeln_error_to_writer<E>(error: &E, writer: &mut dyn Write, is_top_level: bool) -> Result<(), io::Error>
-// where
-//     E: Error + 'static,
-// {
-//     writeln!(writer, "- {}", error)?;
-//     if let Some(source_new) = error.source() {
-//         writeln_error_to_writer(source_new, writer, false)
-//     } else {
-//         Ok(())
-//     }
-// }
-
-pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, f: &mut Formatter<'_>) -> core::fmt::Result {
-    use std::fmt::Write;
-    write!(f, "- {error}")?;
-    if let Some(source_new) = error.source() {
-        f.write_char('\n')?;
-        writeln_error_to_formatter(source_new, f)
-    } else {
-        Ok(())
     }
 }
 

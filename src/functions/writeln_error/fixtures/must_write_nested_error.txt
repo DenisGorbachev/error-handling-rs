@@ -1,0 +1,8 @@
+- failed to update 1 rows
+- encountered 1 errors
+  * - failed to send an i18n request for row 'Foo'
+    - failed to construct a JSON schema
+    - failed to construct 2 values
+    - encountered 2 errors
+      * - 'zed' must be a JSON value
+      * - 'moo' must be a JSON value

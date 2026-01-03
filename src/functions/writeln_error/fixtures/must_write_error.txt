@@ -3,7 +3,7 @@
 - failed to update 2 rows
   * - failed to send an i18n request for row 'Foo'
     - failed to construct a JSON schema
-    - input must be an object
+    - input must be a JSON object
   * - failed to send an i18n request for row 'Bar'
     - failed to send a request
     - server at 239.143.73.1 did not respond

@@ -1,4 +1,4 @@
-use crate::{ErrorDisplayer, write_to_named_temp_file};
+use crate::{ErrorDisplayer, WriteToNamedTempFileError, map_err, write_to_named_temp_file};
 use core::error::Error;
 use core::fmt::Formatter;
 use std::io;
@@ -19,20 +19,33 @@ pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, f: &mut Formatte
 /// Writes a human-readable error trace to the provided writer and persists the full debug output to a temp file.
 ///
 /// This is useful for CLI tools that want a concise error trace on stderr and a path to a full report.
-pub fn writeln_error_to_writer_and_file<E: Error>(error: &E, writer: &mut dyn Write) -> Result<(), io::Error> {
+pub fn writeln_error_to_writer_and_file<E: Error>(error: &E, writer: &mut dyn Write) -> Result<(), WritelnErrorToWriterAndFileError> {
+    use WritelnErrorToWriterAndFileError::*;
     let displayer = ErrorDisplayer(error);
-    writeln!(writer, "{displayer}")?;
-    writeln!(writer)?;
+    map_err!(writeln!(writer, "{displayer}"), WriteFailed)?;
+    map_err!(writeln!(writer), WriteFailed)?;
     let error_debug = format!("{error:#?}");
     let result = write_to_named_temp_file(error_debug.as_bytes());
     match result {
         Ok((_file, path_buf)) => {
-            writeln!(writer, "See the full error report:\nless {}", path_buf.display())
+            map_err!(writeln!(writer, "See the full error report:\nless {}", path_buf.display()), WriteFailed)
         }
-        Err(other_error) => {
-            writeln!(writer, "{other_error:#?}")
+        Err(source) => {
+            map_err!(writeln!(writer, "{source:#?}"), WriteFailed)?;
+            Err(WriteToNamedTempFileFailed {
+                source,
+            })
         }
     }
+}
+
+/// Errors returned by [`writeln_error_to_writer_and_file`].
+#[derive(thiserror::Error, Debug)]
+pub enum WritelnErrorToWriterAndFileError {
+    #[error("failed to write the error trace")]
+    WriteFailed { source: io::Error },
+    #[error("failed to write the full error report")]
+    WriteToNamedTempFileFailed { source: WriteToNamedTempFileError },
 }
 
 /// Writes an error trace to stderr and, if possible, includes a path to the full error report.
@@ -40,11 +53,17 @@ pub fn eprintln_error<E>(error: &E)
 where
     E: Error + 'static,
 {
+    use WritelnErrorToWriterAndFileError::*;
     let mut stderr = stderr().lock();
     let result = writeln_error_to_writer_and_file(error, &mut stderr);
     match result {
         Ok(()) => (),
-        Err(err) => eprintln!("failed to write to stderr: {err:#?}"),
+        Err(WriteFailed {
+            source,
+        }) => eprintln!("failed to write the error to stderr: {source:#?}"),
+        Err(WriteToNamedTempFileFailed {
+            source,
+        }) => eprintln!("failed to write the error to the report file: {source:#?}"),
     }
 }
 

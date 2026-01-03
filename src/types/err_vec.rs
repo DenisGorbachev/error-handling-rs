@@ -1,6 +1,6 @@
-use crate::writeln_error_to_formatter;
+use crate::ErrorDisplayer;
 use core::error::Error;
-use core::fmt::Debug;
+use core::fmt::{Debug, Write};
 use core::fmt::{Display, Formatter};
 use core::ops::{Deref, DerefMut};
 
@@ -14,42 +14,19 @@ pub struct ErrVec<E> {
 
 impl<E: Error> Display for ErrVec<E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        writeln!(f, "encountered {len} errors", len = self.len())?;
+        write!(f, "encountered {len} errors", len = self.len())?;
         self.inner.iter().try_for_each(|error| {
-            let recursive_displayer = RecursiveDisplayer {
-                error,
-                is_nested: true,
-            };
+            f.write_char('\n')?;
+            let recursive_displayer = ErrorDisplayer(error);
             let string = format!("{recursive_displayer}");
             let mut lines = string.lines();
             let first_line_opt = lines.next();
             if let Some(first_line) = first_line_opt {
-                writeln!(f, "  * {first_line}")?;
-                lines.try_for_each(|line| writeln!(f, "    {line}"))?;
-                writeln!(f)?;
+                write!(f, "  * {first_line}")?;
+                lines.try_for_each(|line| write!(f, "\n    {line}"))?;
             }
             Ok(())
         })
-    }
-}
-
-pub struct RecursiveDisplayer<'a, E: ?Sized> {
-    pub error: &'a E,
-    pub is_nested: bool,
-}
-
-impl<'a, E: Error + ?Sized> Display for RecursiveDisplayer<'a, E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        writeln_error_to_formatter(self.error, self.is_nested, f)
-    }
-}
-
-impl<'a, E: Error + ?Sized> From<&'a E> for RecursiveDisplayer<'a, E> {
-    fn from(error: &'a E) -> Self {
-        Self {
-            error,
-            is_nested: false,
-        }
     }
 }
 

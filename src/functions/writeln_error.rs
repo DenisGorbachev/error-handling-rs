@@ -1,8 +1,8 @@
-use crate::{write_to_named_temp_file, Prefixer};
+use crate::{Prefixer, write_to_named_temp_file};
 use core::error::Error;
 use core::fmt::Formatter;
 use std::io;
-use std::io::{stderr, Write};
+use std::io::{Write, stderr};
 
 // pub struct Displayer<'a, E: ?Sized>(pub &'a E);
 //
@@ -92,14 +92,12 @@ where
 //     }
 // }
 
-pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, is_nested: bool, f: &mut Formatter<'_>) -> core::fmt::Result {
-    if is_nested {
-        write!(f, "{error}")?;
-    } else {
-        writeln!(f, "- {error}")?;
-    }
+pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, f: &mut Formatter<'_>) -> core::fmt::Result {
+    use std::fmt::Write;
+    write!(f, "- {error}")?;
     if let Some(source_new) = error.source() {
-        writeln_error_to_formatter(source_new, false, f)
+        f.write_char('\n')?;
+        writeln_error_to_formatter(source_new, f)
     } else {
         Ok(())
     }
@@ -126,16 +124,16 @@ pub fn error_prefixer(writer: &mut dyn Write) -> Prefixer<'_> {
 #[cfg(test)]
 mod tests {
     use crate::functions::writeln_error::tests::JsonSchemaNewError::{InvalidInput, InvalidValues};
-    use crate::{ErrVec, RecursiveDisplayer};
-    use pretty_assertions::assert_eq;
-    use std::error::Error;
-    use thiserror::Error;
+    use crate::{ErrVec, ErrorDisplayer};
     use CliRunError::*;
     use CommandRunError::*;
     use I18nRequestError::*;
     use I18nUpdateRunError::*;
     use JsonValueNewError::*;
     use UpdateRowError::*;
+    use pretty_assertions::assert_eq;
+    use std::error::Error;
+    use thiserror::Error;
 
     #[test]
     fn must_write_error() {
@@ -194,7 +192,7 @@ mod tests {
     fn assert_write_eq<E: Error>(error: &E, expected: &str) {
         use std::fmt::Write;
         let mut actual = String::new();
-        let displayer = RecursiveDisplayer::from(error);
+        let displayer = ErrorDisplayer(error);
         writeln!(actual, "{displayer}").unwrap();
         eprintln!("{}", &actual);
         assert_eq!(actual, expected)

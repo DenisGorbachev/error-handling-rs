@@ -68,9 +68,10 @@ This will produce a nice "error trace" like below:
 - failed to run CLI command
 - failed to run i18n update command
 - failed to update 2 rows
+- encountered 2 errors
   * - failed to send an i18n request for row 'Foo'
     - failed to construct a JSON schema
-    - input must be an object
+    - input must be a JSON object
   * - failed to send an i18n request for row 'Bar'
     - failed to send a request
     - server at 239.143.73.1 did not respond

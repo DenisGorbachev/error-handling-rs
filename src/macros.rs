@@ -184,7 +184,7 @@ macro_rules! _index_err_async {
 
 #[cfg(all(test, feature = "std"))]
 mod tests {
-    use crate::{ErrVec, PathBufDisplay};
+    use crate::{ErrVec, ItemError, PathBufDisplay};
     use futures::future::join_all;
     use serde::{Deserialize, Serialize};
     use std::io;
@@ -269,7 +269,7 @@ mod tests {
             .collect::<JoinSet<_>>()
             .join_all()
             .await;
-        Ok(handle_into_iter!(results, CheckFileFailed))
+        Ok(handle_into_iter!(results, CheckFilesFailed))
     }
 
     #[allow(dead_code)]
@@ -278,7 +278,7 @@ mod tests {
         let iter = paths.iter().map(check_file_ref);
         let results = join_all(iter).await;
         let items = paths.into_iter().map(PathBufDisplay::from);
-        let (outputs, _items) = handle_iter_of_refs!(results.into_iter(), items, CheckFileRefFailed);
+        let (outputs, _items) = handle_iter_of_refs!(results.into_iter(), items, CheckFilesRefFailed);
         Ok(outputs)
     }
 
@@ -352,19 +352,19 @@ mod tests {
     #[derive(Error, Debug)]
     enum MultiplyEvensError {
         #[error("failed to check {len} numbers", len = source.len())]
-        CheckEvensFailed { source: ErrVec },
+        CheckEvensFailed { source: ErrVec<CheckEvenError> },
     }
 
     #[derive(Error, Debug)]
     enum ReadFilesError {
         #[error("failed to check {len} files", len = source.len())]
-        CheckFileFailed { source: ErrVec },
+        CheckFilesFailed { source: ErrVec<CheckFileError> },
     }
 
     #[derive(Error, Debug)]
     enum ReadFilesRefError {
         #[error("failed to check {len} files", len = source.len())]
-        CheckFileRefFailed { source: ErrVec },
+        CheckFilesRefFailed { source: ErrVec<ItemError<PathBufDisplay, CheckFileRefError>> },
     }
 
     #[derive(Error, Debug)]

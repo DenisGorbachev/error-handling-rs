@@ -175,6 +175,3 @@ pub use types::*;
 mod functions;
 
 pub use functions::*;
-
-#[cfg(all(test, feature = "std"))]
-mod drafts;

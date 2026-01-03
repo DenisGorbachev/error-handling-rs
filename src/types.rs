@@ -10,12 +10,10 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         mod err_vec;
         mod path_buf_display;
-        mod prefixer;
+        mod error_displayer;
 
         pub use err_vec::*;
         pub use path_buf_display::*;
-        pub use prefixer::*;
+        pub use error_displayer::*;
     }
 }
-mod error_displayer;
-pub use error_displayer::*;

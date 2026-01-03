@@ -1,4 +1,4 @@
-use crate::{Prefixer, write_to_named_temp_file};
+use crate::write_to_named_temp_file;
 use core::error::Error;
 use core::fmt::Formatter;
 use std::io;
@@ -114,11 +114,6 @@ where
         Ok(()) => (),
         Err(err) => eprintln!("failed to write to stderr: {err:#?}"),
     }
-}
-
-/// Builds a [`Prefixer`] suitable for nested error bullet lists.
-pub fn error_prefixer(writer: &mut dyn Write) -> Prefixer<'_> {
-    Prefixer::new("  * ", "    ", writer)
 }
 
 #[cfg(test)]

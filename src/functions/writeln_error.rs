@@ -1,4 +1,4 @@
-use crate::write_to_named_temp_file;
+use crate::{ErrorDisplayer, write_to_named_temp_file};
 use core::error::Error;
 use core::fmt::Formatter;
 use std::io;
@@ -20,7 +20,8 @@ pub fn writeln_error_to_formatter<E: Error + ?Sized>(error: &E, f: &mut Formatte
 ///
 /// This is useful for CLI tools that want a concise error trace on stderr and a path to a full report.
 pub fn writeln_error_to_writer_and_file<E: Error>(error: &E, writer: &mut dyn Write) -> Result<(), io::Error> {
-    writeln!(writer, "{error}")?;
+    let displayer = ErrorDisplayer(error);
+    writeln!(writer, "{displayer}")?;
     writeln!(writer)?;
     let error_debug = format!("{error:#?}");
     let result = write_to_named_temp_file(error_debug.as_bytes());

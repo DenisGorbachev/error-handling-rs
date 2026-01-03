@@ -4,10 +4,9 @@ use core::fmt::{Debug, Write};
 use core::fmt::{Display, Formatter};
 use core::ops::{Deref, DerefMut};
 
-/// An owned collection of errors that itself implements [`Error`].
-/// T must implement Display or Errgonomic.
-#[derive(Default, Debug)]
-pub struct ErrVec<E> {
+/// An owned collection of errors
+#[derive(Default, Clone, Debug)]
+pub struct ErrVec<E: Error> {
     /// Collected errors.
     pub inner: Vec<E>,
 }
@@ -32,7 +31,7 @@ impl<E: Error> Display for ErrVec<E> {
 
 impl<E: Error> Error for ErrVec<E> {}
 
-impl<E> Deref for ErrVec<E> {
+impl<E: Error> Deref for ErrVec<E> {
     type Target = Vec<E>;
 
     fn deref(&self) -> &Self::Target {
@@ -40,13 +39,13 @@ impl<E> Deref for ErrVec<E> {
     }
 }
 
-impl<E> DerefMut for ErrVec<E> {
+impl<E: Error> DerefMut for ErrVec<E> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-impl<E> ErrVec<E> {
+impl<E: Error> ErrVec<E> {
     /// Builds an [`ErrVec`] by boxing each error from the iterator.
     pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
         Self {
@@ -55,7 +54,7 @@ impl<E> ErrVec<E> {
     }
 }
 
-impl<E> From<Vec<E>> for ErrVec<E> {
+impl<E: Error> From<Vec<E>> for ErrVec<E> {
     fn from(inner: Vec<E>) -> Self {
         Self {
             inner,
@@ -63,7 +62,7 @@ impl<E> From<Vec<E>> for ErrVec<E> {
     }
 }
 
-impl<E: Clone, const N: usize> From<[E; N]> for ErrVec<E> {
+impl<E: Error + Clone, const N: usize> From<[E; N]> for ErrVec<E> {
     fn from(inner: [E; N]) -> Self {
         Self {
             inner: inner.to_vec(),
@@ -71,7 +70,7 @@ impl<E: Clone, const N: usize> From<[E; N]> for ErrVec<E> {
     }
 }
 
-impl<E: Clone> From<&[E]> for ErrVec<E> {
+impl<E: Error + Clone> From<&[E]> for ErrVec<E> {
     fn from(inner: &[E]) -> Self {
         Self {
             inner: inner.to_vec(),

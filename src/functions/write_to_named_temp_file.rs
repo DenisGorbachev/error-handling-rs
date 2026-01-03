@@ -9,8 +9,8 @@ use thiserror::Error;
 /// Writes the provided buffer to a named temporary file and persists it to disk.
 ///
 /// Returns the persisted file handle and its path.
-pub fn write_to_named_temp_file(buf: &[u8]) -> Result<(File, PathBuf), WriteErrorDebugToTempFileError> {
-    use WriteErrorDebugToTempFileError::*;
+pub fn write_to_named_temp_file(buf: &[u8]) -> Result<(File, PathBuf), WriteToNamedTempFileError> {
+    use WriteToNamedTempFileError::*;
     let mut temp = handle!(NamedTempFile::new(), CreateTempFileFailed);
     handle!(temp.write_all(buf), WriteFailed);
     map_err!(temp.keep(), KeepFailed)
@@ -18,7 +18,7 @@ pub fn write_to_named_temp_file(buf: &[u8]) -> Result<(File, PathBuf), WriteErro
 
 /// Errors returned by [`write_to_named_temp_file`].
 #[derive(Error, Debug)]
-pub enum WriteErrorDebugToTempFileError {
+pub enum WriteToNamedTempFileError {
     /// Failed to create a temporary file.
     #[error("failed to create a temporary file")]
     CreateTempFileFailed { source: io::Error },

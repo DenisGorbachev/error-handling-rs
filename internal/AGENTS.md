@@ -17,13 +17,19 @@
   * If the `#[error]` attribute contains fields that implement `Display`, then those fields must be output using `Display` formatting (not `Debug` formatting)
     * Good:
       ```rust
-      #[error("task not found for query '{query}'")]
-      TaskNotFound { query: String }
+      #[derive(Error, Debug)]
+      pub enum QueryFailed {
+          #[error("task not found for query '{query}'")]
+          TaskNotFound { query: String }
+      }
       ```
     * Bad:
       ```rust
-      #[error("task not found for query '{query:?}'")]
-      TaskNotFound { query: String }
+      #[derive(Error, Debug)]
+      pub enum QueryFailed {
+          #[error("task not found for query '{query:?}'")]
+          TaskNotFound { query: String }
+      }
       ```
   * If the `#[error]` attribute contains fields, then those fields must be wrapped in single quotes. This is necessary to correctly display fields that may contain spaces.
     * Good: `#[error("user '{name}' not found")]`

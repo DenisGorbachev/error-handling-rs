@@ -46,7 +46,6 @@ impl<E: Error> DerefMut for ErrVec<E> {
 }
 
 impl<E: Error> ErrVec<E> {
-    /// Builds an [`ErrVec`] by boxing each error from the iterator.
     pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
         Self {
             inner: iter.into_iter().collect(),

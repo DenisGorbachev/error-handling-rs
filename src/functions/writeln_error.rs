@@ -28,7 +28,14 @@ pub fn writeln_error_to_writer_and_file<E: Error>(error: &E, writer: &mut dyn Wr
     let result = write_to_named_temp_file(error_debug.as_bytes());
     match result {
         Ok((_file, path_buf)) => {
-            map_err!(writeln!(writer, "See the full error report:\nless {}", path_buf.display()), WriteFailed)
+            map_err!(writeln!(writer, "See the full error report:"), WriteFailed)?;
+            if cfg!(windows) {
+                map_err!(writeln!(writer, "{}", path_buf.display()), WriteFailed)?;
+            } else {
+                // assuming `less` is available
+                map_err!(writeln!(writer, "less {}", path_buf.display()), WriteFailed)?;
+            }
+            Ok(())
         }
         Err(source) => {
             map_err!(writeln!(writer, "{source:#?}"), WriteFailed)?;

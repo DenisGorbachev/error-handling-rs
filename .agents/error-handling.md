@@ -56,6 +56,21 @@ pub fn exit_result<E: Error + 'static>(result: Result<(), E>) -> ExitCode {
 }
 ````
 
+## File: src/functions/get_root_error.rs
+
+````rust
+use core::error::Error;
+
+/// Returns the deepest source error in the error chain (the root cause).
+pub fn get_root_source(error: &dyn Error) -> &dyn Error {
+    let mut source = error;
+    while let Some(source_new) = source.source() {
+        source = source_new;
+    }
+    source
+}
+````
+
 ## File: src/functions/partition_result.rs
 
 ````rust
@@ -87,105 +102,6 @@ pub fn partition_result<T, E>(results: impl IntoIterator<Item = Result<T, E>>) -
     });
 
     if errors.is_empty() { Ok(oks) } else { Err(errors) }
-}
-````
-
-## File: src/types/error_displayer.rs
-
-````rust
-use crate::writeln_error_to_formatter;
-use core::fmt::{Display, Formatter};
-use std::error::Error;
-
-pub struct ErrorDisplayer<'a, E: ?Sized>(pub &'a E);
-
-impl<'a, E: Error + ?Sized> Display for ErrorDisplayer<'a, E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        writeln_error_to_formatter(self.0, f)
-    }
-}
-
-impl<'a, E: Error + ?Sized> From<&'a E> for ErrorDisplayer<'a, E> {
-    fn from(error: &'a E) -> Self {
-        Self(error)
-    }
-}
-````
-
-## File: src/types/item_error.rs
-
-````rust
-use thiserror::Error;
-
-/// Associates an error with the item that caused it.
-#[derive(Error, Debug)]
-#[error("error occurred for item {item}: {source}")]
-pub struct ItemError<T, E> {
-    /// The item that produced the error.
-    pub item: T,
-    /// The error produced for the item.
-    pub source: E,
-}
-````
-
-## File: src/types/path_buf_display.rs
-
-````rust
-use crate::DisplayAsDebug;
-use std::path::PathBuf;
-
-/// A [`PathBuf`] that returns a `Debug` representation in [`Display`](std::fmt::Display) impl.
-pub type PathBufDisplay = DisplayAsDebug<PathBuf>;
-````
-
-## File: src/functions/get_root_error.rs
-
-````rust
-use core::error::Error;
-
-/// Returns the deepest source error in the error chain (the root cause).
-pub fn get_root_source(error: &dyn Error) -> &dyn Error {
-    let mut source = error;
-    while let Some(source_new) = source.source() {
-        source = source_new;
-    }
-    source
-}
-````
-
-## File: src/functions/write_to_named_temp_file.rs
-
-````rust
-use crate::{handle, map_err};
-use std::fs::File;
-use std::io;
-use std::io::Write;
-use std::path::PathBuf;
-use tempfile::{NamedTempFile, PersistError};
-use thiserror::Error;
-
-/// Writes the provided buffer to a named temporary file and persists it to disk.
-///
-/// Returns the persisted file handle and its path.
-pub fn write_to_named_temp_file(buf: &[u8]) -> Result<(File, PathBuf), WriteToNamedTempFileError> {
-    use WriteToNamedTempFileError::*;
-    let mut temp = handle!(NamedTempFile::new(), CreateTempFileFailed);
-    handle!(temp.write_all(buf), WriteFailed);
-    map_err!(temp.keep(), KeepFailed)
-}
-
-/// Errors returned by [`write_to_named_temp_file`].
-#[derive(Error, Debug)]
-pub enum WriteToNamedTempFileError {
-    /// Failed to create a temporary file.
-    #[error("failed to create a temporary file")]
-    CreateTempFileFailed { source: io::Error },
-    /// Failed to write the buffer into the temporary file.
-    #[error("failed to write to a temporary file")]
-    WriteFailed { source: io::Error },
-    /// Failed to persist the temporary file to its final path.
-    #[error("failed to persist the temporary file")]
-    KeepFailed { source: PersistError },
 }
 ````
 
@@ -246,6 +162,90 @@ impl<T: Debug> From<T> for DisplayAsDebug<T> {
 }
 ````
 
+## File: src/types/item_error.rs
+
+````rust
+use thiserror::Error;
+
+/// Associates an error with the item that caused it.
+#[derive(Error, Debug)]
+#[error("error occurred for item {item}: {source}")]
+pub struct ItemError<T, E> {
+    /// The item that produced the error.
+    pub item: T,
+    /// The error produced for the item.
+    pub source: E,
+}
+````
+
+## File: src/types/path_buf_display.rs
+
+````rust
+use crate::DisplayAsDebug;
+use std::path::PathBuf;
+
+/// A [`PathBuf`] that returns a `Debug` representation in [`Display`](std::fmt::Display) impl.
+pub type PathBufDisplay = DisplayAsDebug<PathBuf>;
+````
+
+## File: src/functions/write_to_named_temp_file.rs
+
+````rust
+use crate::{handle, map_err};
+use std::fs::File;
+use std::io;
+use std::io::Write;
+use std::path::PathBuf;
+use tempfile::{NamedTempFile, PersistError};
+use thiserror::Error;
+
+/// Writes the provided buffer to a named temporary file and persists it to disk.
+///
+/// Returns the persisted file handle and its path.
+pub fn write_to_named_temp_file(buf: &[u8]) -> Result<(File, PathBuf), WriteToNamedTempFileError> {
+    use WriteToNamedTempFileError::*;
+    let mut temp = handle!(NamedTempFile::new(), CreateTempFileFailed);
+    handle!(temp.write_all(buf), WriteFailed);
+    map_err!(temp.keep(), KeepFailed)
+}
+
+/// Errors returned by [`write_to_named_temp_file`].
+#[derive(Error, Debug)]
+pub enum WriteToNamedTempFileError {
+    /// Failed to create a temporary file.
+    #[error("failed to create a temporary file")]
+    CreateTempFileFailed { source: io::Error },
+    /// Failed to write the buffer into the temporary file.
+    #[error("failed to write to a temporary file")]
+    WriteFailed { source: io::Error },
+    /// Failed to persist the temporary file to its final path.
+    #[error("failed to persist the temporary file")]
+    KeepFailed { source: PersistError },
+}
+````
+
+## File: src/types/error_displayer.rs
+
+````rust
+use crate::writeln_error_to_formatter;
+use core::fmt::{Display, Formatter};
+use std::error::Error;
+
+pub struct ErrorDisplayer<'a, E: ?Sized>(pub &'a E);
+
+impl<'a, E: Error + ?Sized> Display for ErrorDisplayer<'a, E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        writeln_error_to_formatter(self.0, f)
+    }
+}
+
+impl<'a, E: Error + ?Sized> From<&'a E> for ErrorDisplayer<'a, E> {
+    fn from(error: &'a E) -> Self {
+        Self(error)
+    }
+}
+````
+
 ## File: src/functions.rs
 
 ````rust
@@ -263,113 +263,6 @@ cfg_if::cfg_if! {
         pub use writeln_error::*;
         pub use write_to_named_temp_file::*;
         pub use exit_result::*;
-    }
-}
-````
-
-## File: src/types.rs
-
-````rust
-mod debug_as_display;
-mod display_as_debug;
-mod item_error;
-
-pub use debug_as_display::*;
-pub use display_as_debug::*;
-pub use item_error::*;
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "std")] {
-        mod err_vec;
-        mod path_buf_display;
-        mod error_displayer;
-
-        pub use err_vec::*;
-        pub use path_buf_display::*;
-        pub use error_displayer::*;
-    }
-}
-````
-
-## File: src/types/err_vec.rs
-
-````rust
-use crate::ErrorDisplayer;
-use core::error::Error;
-use core::fmt::{Debug, Write};
-use core::fmt::{Display, Formatter};
-use core::ops::{Deref, DerefMut};
-
-/// An owned collection of errors
-#[derive(Default, Clone, Debug)]
-pub struct ErrVec<E: Error> {
-    /// Collected errors.
-    pub inner: Vec<E>,
-}
-
-impl<E: Error> Display for ErrVec<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "encountered {len} errors", len = self.len())?;
-        self.inner.iter().try_for_each(|error| {
-            f.write_char('\n')?;
-            let recursive_displayer = ErrorDisplayer(error);
-            let string = format!("{recursive_displayer}");
-            let mut lines = string.lines();
-            let first_line_opt = lines.next();
-            if let Some(first_line) = first_line_opt {
-                write!(f, "  * {first_line}")?;
-                lines.try_for_each(|line| write!(f, "\n    {line}"))?;
-            }
-            Ok(())
-        })
-    }
-}
-
-impl<E: Error> Error for ErrVec<E> {}
-
-impl<E: Error> Deref for ErrVec<E> {
-    type Target = Vec<E>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<E: Error> DerefMut for ErrVec<E> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl<E: Error> ErrVec<E> {
-    pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
-        Self {
-            inner: iter.into_iter().collect(),
-        }
-    }
-}
-
-impl<E: Error> From<Vec<E>> for ErrVec<E> {
-    fn from(inner: Vec<E>) -> Self {
-        Self {
-            inner,
-        }
-    }
-}
-
-impl<E: Error + Clone, const N: usize> From<[E; N]> for ErrVec<E> {
-    fn from(inner: [E; N]) -> Self {
-        Self {
-            inner: inner.to_vec(),
-        }
-    }
-}
-
-impl<E: Error + Clone> From<&[E]> for ErrVec<E> {
-    fn from(inner: &[E]) -> Self {
-        Self {
-            inner: inner.to_vec(),
-        }
     }
 }
 ````
@@ -846,6 +739,290 @@ mod tests {
 }
 ````
 
+## File: src/types.rs
+
+````rust
+mod debug_as_display;
+mod display_as_debug;
+mod item_error;
+
+pub use debug_as_display::*;
+pub use display_as_debug::*;
+pub use item_error::*;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "std")] {
+        mod err_vec;
+        mod path_buf_display;
+        mod error_displayer;
+
+        pub use err_vec::*;
+        pub use path_buf_display::*;
+        pub use error_displayer::*;
+    }
+}
+````
+
+## File: src/types/err_vec.rs
+
+````rust
+use crate::ErrorDisplayer;
+use core::error::Error;
+use core::fmt::{Debug, Write};
+use core::fmt::{Display, Formatter};
+use core::ops::{Deref, DerefMut};
+
+/// An owned collection of errors
+#[derive(Default, Clone, Debug)]
+pub struct ErrVec<E: Error>(pub Vec<E>);
+
+impl<E: Error> ErrVec<E> {
+    pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
+impl<E: Error> Display for ErrVec<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "encountered {len} errors", len = self.len())?;
+        self.0.iter().try_for_each(|error| {
+            f.write_char('\n')?;
+            let recursive_displayer = ErrorDisplayer(error);
+            let string = format!("{recursive_displayer}");
+            let mut lines = string.lines();
+            let first_line_opt = lines.next();
+            if let Some(first_line) = first_line_opt {
+                write!(f, "  * {first_line}")?;
+                lines.try_for_each(|line| write!(f, "\n    {line}"))?;
+            }
+            Ok(())
+        })
+    }
+}
+
+impl<E: Error> Error for ErrVec<E> {}
+
+impl<E: Error> Deref for ErrVec<E> {
+    type Target = Vec<E>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<E: Error> DerefMut for ErrVec<E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<E: Error> From<ErrVec<E>> for Vec<E> {
+    fn from(val: ErrVec<E>) -> Self {
+        val.0
+    }
+}
+
+impl<E: Error> From<Vec<E>> for ErrVec<E> {
+    fn from(inner: Vec<E>) -> Self {
+        Self(inner)
+    }
+}
+
+impl<E: Error + Clone, const N: usize> From<[E; N]> for ErrVec<E> {
+    fn from(inner: [E; N]) -> Self {
+        Self(inner.to_vec())
+    }
+}
+
+impl<E: Error + Clone> From<&[E]> for ErrVec<E> {
+    fn from(inner: &[E]) -> Self {
+        Self(inner.to_vec())
+    }
+}
+````
+
+## File: src/lib.rs
+
+````rust
+//! Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
+//!
+//! ## Example
+//!
+//! ```rust
+//! # #[cfg(feature = "std")]
+//! # {
+//! # use std::io;
+//! # use std::fs::read_to_string;
+//! # use std::path::{Path, PathBuf};
+//! # use serde::{Deserialize, Serialize};
+//! # use serde_json::from_str;
+//! # use thiserror::Error;
+//! # use errgonomic::handle;
+//! #
+//! #[derive(Serialize, Deserialize)]
+//! struct Config {/* some fields */}
+//!
+//! // bad: doesn't return the path to config (the user won't be able to fix it)
+//! fn parse_config_v1(path: PathBuf) -> io::Result<Config> {
+//!     let contents = read_to_string(&path)?;
+//!     let config = from_str(&contents).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+//!     Ok(config)
+//! }
+//!
+//! // good: returns the path to config & the underlying deserialization error (the user will be able fix it)
+//! fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
+//!     use ParseConfigError::*;
+//!     let contents = handle!(read_to_string(&path), ReadToStringFailed, path);
+//!     let config = handle!(from_str(&contents), DeserializeFailed, path, contents);
+//!     Ok(config)
+//! }
+//!
+//! #[derive(Error, Debug)]
+//! enum ParseConfigError {
+//!     #[error("failed to read file to string: '{path}'")]
+//!     ReadToStringFailed { path: PathBuf, source: std::io::Error },
+//!     #[error("failed to parse the file contents into config: '{path}'")]
+//!     DeserializeFailed { path: PathBuf, contents: String, source: serde_json::Error }
+//! }
+//! # }
+//! ```
+//!
+//! Advantages:
+//!
+//! * `parse_config_v2` allows you to determine exactly what error has occurred
+//! * `parse_config_v2` provides you with all information needed to fix the underlying issue
+//! * `parse_config_v2` allows you to retry the call by reusing the `path` (avoiding unnecessary clones)
+//!
+//! Disadvantages:
+//!
+//! * `parse_config_v2` is longer
+//!
+//! That means `parse_config_v2` is strictly better but requires writing more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach `v2`, which provides you with better errors.
+//!
+//! This crates provides the `handle` family of macros to simplify the error handling code.
+//!
+//! ## Better debugging
+//!
+//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error:
+//!
+//! ```rust
+//! # #[cfg(feature = "std")]
+//! # {
+//! # use errgonomic::exit_result;
+//! # use thiserror::Error;
+//! # use std::process::ExitCode;
+//! #
+//! # #[derive(Error, Debug)]
+//! # enum Err {}
+//! #
+//! # fn run() -> Result<(), Err> { Ok(()) }
+//! #
+//! pub fn main() -> ExitCode {
+//!     exit_result(run())
+//! }
+//! # }
+//! ```
+//!
+//! This will produce a nice "error trace" like below:
+#![doc = "```text"]
+#![doc = include_str!("./functions/writeln_error/fixtures/must_write_error.txt")]
+#![doc = "```"]
+//!
+//! ## Better error handling
+//!
+//! **Goal**: Help the caller diagnose the issue, fix it, and retry the call.
+//!
+//! **Approach**: Every error must be represented by a unique enum variant with relevant fields.
+//!
+//! ### Guidelines
+//!
+//! * Every error type must be an enum
+//! * Every error enum variant must be a struct variant
+//! * Every error enum variant must contain one field per owned variable that is relevant to the fallible expression that this variant wraps
+//!   * The relevant variable is a variable whose value determines whether the fallible expression returns an [`Ok`] or an [`Err`]
+//! * Every error enum variant must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
+//! * Every error enum variant field must have an owned type (not a reference)
+//! * Every error enum should be located below the function that returns it (in the same file)
+//! * Every fallible function must return a unique error type
+//! * Every call to another fallible function must be wrapped in a unique error enum variant
+//! * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
+//! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
+//! * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
+//! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
+//! * If the error enum variant has a `source` field, then this field must be the first field
+//! * The code must not use strings for error messages
+//! * The production code must not use `unwrap` or `expect` (only tests may use `unwrap` or `expect`)
+//! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
+//! * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
+//!
+//! ### Conveniences
+//!
+//! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum (for example: `use ParseConfigError::*;`)
+//! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
+//!
+//! ### Naming
+//!
+//! * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
+//! * The name of the error enum variant should end with `Failed` or `NotFound` or `Invalid` (for example: `ReadFileFailed`, `UserNotFound`, `PasswordInvalid`)
+//! * If the error variant name is associated with a child function call, the name of the error variant must be equal to the name of the function converted to CamelCase concatenated with `Failed` (for example: if the parent function calls `read_file`, then it should call it like this: `handle!(read_file(&path), ReadFileFailed, path)`
+//! * The name of the error enum must include the name of the function converted to CamelCase
+//!   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
+//!   * If the function is an associated function, the name of the error type must be exactly equal to the name of the type without generics concatenated with the name of the function in CamelCase concatenated with `Error`
+//!   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
+//! * If the error enum is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
+//!
+//! ## Macros
+//!
+//! Use the following macros for more concise error handling:
+//!
+//! * [`handle!`] instead of [`Result::map_err`]
+//! * [`handle_opt!`] instead of [`Option::ok_or`] and [`Option::ok_or_else`]
+//! * [`handle_bool!`] instead of `if condition { return Err(...) }`
+//! * [`handle_iter!`] instead of code that handles errors in iterators
+//! * [`handle_iter_of_refs!`] instead of code that handles errors in iterators of references (where the values are still being owned by the underlying collection)
+//! * [`handle_into_iter!`] instead of code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
+//!
+//! ## Definitions
+//!
+//! ### Fallible expression
+//!
+//! An expression that returns a [`Result`].
+//!
+//! ### Data type
+//!
+//! A type that holds the actual data.
+//!
+//! For example:
+//!
+//! * `bool`
+//! * `String`
+//! * `PathBuf`
+//!
+//! ### Non-data type
+//!
+//! A type that doesn't hold the actual data.
+//!
+//! For example:
+//!
+//! * `RestClient` doesn't point to the actual data, it only allows querying it.
+//! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+extern crate core;
+
+mod macros;
+
+mod types;
+
+pub use types::*;
+
+mod functions;
+
+pub use functions::*;
+````
+
 ## File: src/functions/writeln_error.rs
 
 ````rust
@@ -1061,186 +1238,4 @@ mod tests {
         }
     }
 }
-````
-
-## File: src/lib.rs
-
-````rust
-//! Macros for ergonomic error handling with [thiserror](https://crates.io/crates/thiserror).
-//!
-//! ## Example
-//!
-//! ```rust
-//! # #[cfg(feature = "std")]
-//! # {
-//! # use std::io;
-//! # use std::fs::read_to_string;
-//! # use std::path::{Path, PathBuf};
-//! # use serde::{Deserialize, Serialize};
-//! # use serde_json::from_str;
-//! # use thiserror::Error;
-//! # use errgonomic::handle;
-//! #
-//! #[derive(Serialize, Deserialize)]
-//! struct Config {/* some fields */}
-//!
-//! // bad: doesn't return the path to config (the user won't be able to fix it)
-//! fn parse_config_v1(path: PathBuf) -> io::Result<Config> {
-//!     let contents = read_to_string(&path)?;
-//!     let config = from_str(&contents).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-//!     Ok(config)
-//! }
-//!
-//! // good: returns the path to config & the underlying deserialization error (the user will be able fix it)
-//! fn parse_config_v2(path: PathBuf) -> Result<Config, ParseConfigError> {
-//!     use ParseConfigError::*;
-//!     let contents = handle!(read_to_string(&path), ReadToStringFailed, path);
-//!     let config = handle!(from_str(&contents), DeserializeFailed, path, contents);
-//!     Ok(config)
-//! }
-//!
-//! #[derive(Error, Debug)]
-//! enum ParseConfigError {
-//!     #[error("failed to read file to string: '{path}'")]
-//!     ReadToStringFailed { path: PathBuf, source: std::io::Error },
-//!     #[error("failed to parse the file contents into config: '{path}'")]
-//!     DeserializeFailed { path: PathBuf, contents: String, source: serde_json::Error }
-//! }
-//! # }
-//! ```
-//!
-//! Advantages:
-//!
-//! * `parse_config_v2` allows you to determine exactly what error has occurred
-//! * `parse_config_v2` provides you with all information needed to fix the underlying issue
-//! * `parse_config_v2` allows you to retry the call by reusing the `path` (avoiding unnecessary clones)
-//!
-//! Disadvantages:
-//!
-//! * `parse_config_v2` is longer
-//!
-//! That means `parse_config_v2` is strictly better but requires writing more code. However, with LLMs, writing more code is not an issue. Therefore, it's better to use a more verbose approach `v2`, which provides you with better errors.
-//!
-//! This crates provides the `handle` family of macros to simplify the error handling code.
-//!
-//! ## Better debugging
-//!
-//! To improve your debugging experience: call [`exit_result`] in `main` right before return, and it will display all information necessary to understand the root cause of the error:
-//!
-//! ```rust
-//! # #[cfg(feature = "std")]
-//! # {
-//! # use errgonomic::exit_result;
-//! # use thiserror::Error;
-//! # use std::process::ExitCode;
-//! #
-//! # #[derive(Error, Debug)]
-//! # enum Err {}
-//! #
-//! # fn run() -> Result<(), Err> { Ok(()) }
-//! #
-//! pub fn main() -> ExitCode {
-//!     exit_result(run())
-//! }
-//! # }
-//! ```
-//!
-//! This will produce a nice "error trace" like below:
-#![doc = "```text"]
-#![doc = include_str!("./functions/writeln_error/fixtures/must_write_error.txt")]
-#![doc = "```"]
-//!
-//! ## Better error handling
-//!
-//! **Goal**: Help the caller diagnose the issue, fix it, and retry the call.
-//!
-//! **Approach**: Every error must be represented by a unique enum variant with relevant fields.
-//!
-//! ### Guidelines
-//!
-//! * Every error type must be an enum
-//! * Every error enum variant must be a struct variant
-//! * Every error enum variant must contain one field per owned variable that is relevant to the fallible expression that this variant wraps
-//!   * The relevant variable is a variable whose value determines whether the fallible expression returns an [`Ok`] or an [`Err`]
-//! * Every error enum variant must have fields only for [`data types`](#data-type), not for [`non-data types`](#non-data-type)
-//! * Every error enum variant field must have an owned type (not a reference)
-//! * Every error enum should be located below the function that returns it (in the same file)
-//! * Every fallible function must return a unique error type
-//! * Every call to another fallible function must be wrapped in a unique error enum variant
-//! * If the function contains only one fallible expression, this expression must still be wrapped in an error enum variant
-//! * Every variable that contains secret data (the one which must not be displayed or logged, e.g. password, API key, personally identifying information) must have a type that doesn't output the underlying data in the Debug and Display impls (e.g. [`secrecy::SecretBox`](https://docs.rs/secrecy/latest/secrecy/struct.SecretBox.html))
-//! * The code that calls a fallible function on each element of a collection should return an `impl Iterator<Item = Result<T, E>>` instead of short-circuiting on the first error
-//! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
-//! * If the error enum variant has a `source` field, then this field must be the first field
-//! * The code must not use strings for error messages
-//! * The production code must not use `unwrap` or `expect` (only tests may use `unwrap` or `expect`)
-//! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
-//! * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
-//!
-//! ### Conveniences
-//!
-//! * Every fallible function body must begin with `use ThisFunctionError::*;`, where `ThisFunctionError` must be the name of this function's error enum (for example: `use ParseConfigError::*;`)
-//! * The error handling code must use the error enum variant names without the error enum name prefix (for example: `ReadFileFailed` instead of `ParseConfigError::ReadFileFailed`)
-//!
-//! ### Naming
-//!
-//! * The name of the error enum must end with `Error` (for example: `ParseConfigError`)
-//! * The name of the error enum variant should end with `Failed` or `NotFound` or `Invalid` (for example: `ReadFileFailed`, `UserNotFound`, `PasswordInvalid`)
-//! * If the error variant name is associated with a child function call, the name of the error variant must be equal to the name of the function converted to CamelCase concatenated with `Failed` (for example: if the parent function calls `read_file`, then it should call it like this: `handle!(read_file(&path), ReadFileFailed, path)`
-//! * The name of the error enum must include the name of the function converted to CamelCase
-//!   * If the function is a freestanding function, the name of the error type must be exactly equal to the name of the function converted to CamelCase concatenated with `Error`
-//!   * If the function is an associated function, the name of the error type must be exactly equal to the name of the type without generics concatenated with the name of the function in CamelCase concatenated with `Error`
-//!   * If the error is specified as an associated type of a foreign trait with multiple functions that return this associated error type, then the name of the error type must be exactly equal to the name of the trait including generics concatenated with the name of the type for which this trait is implemented concatenated with `Error`
-//! * If the error enum is defined for a `TryFrom<A> for B` impl, then its name must be equal to "Convert{A}To{B}Error"
-//!
-//! ## Macros
-//!
-//! Use the following macros for more concise error handling:
-//!
-//! * [`handle!`] instead of [`Result::map_err`]
-//! * [`handle_opt!`] instead of [`Option::ok_or`] and [`Option::ok_or_else`]
-//! * [`handle_bool!`] instead of `if condition { return Err(...) }`
-//! * [`handle_iter!`] instead of code that handles errors in iterators
-//! * [`handle_iter_of_refs!`] instead of code that handles errors in iterators of references (where the values are still being owned by the underlying collection)
-//! * [`handle_into_iter!`] instead of code that handles errors in collections that implement [`IntoIterator`] (including [`Vec`] and [`HashMap`](std::collections::HashMap)
-//!
-//! ## Definitions
-//!
-//! ### Fallible expression
-//!
-//! An expression that returns a [`Result`].
-//!
-//! ### Data type
-//!
-//! A type that holds the actual data.
-//!
-//! For example:
-//!
-//! * `bool`
-//! * `String`
-//! * `PathBuf`
-//!
-//! ### Non-data type
-//!
-//! A type that doesn't hold the actual data.
-//!
-//! For example:
-//!
-//! * `RestClient` doesn't point to the actual data, it only allows querying it.
-//! * `DatabaseConnection` doesn't hold the actual data, it only allows querying it.
-
-#![cfg_attr(not(feature = "std"), no_std)]
-
-extern crate alloc;
-extern crate core;
-
-mod macros;
-
-mod types;
-
-pub use types::*;
-
-mod functions;
-
-pub use functions::*;
 ````

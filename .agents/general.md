@@ -10,11 +10,7 @@ You are a senior Rust software architect. You write high-quality, production-rea
 
 ## Workflow
 
-* Make a commit after completing the task
-  * Follow the Conventional Commits guidelines for commit message
-  * Don't use emojis
-  * Note that a pre-commit hook will execute `mise run agent:on:stop`. This command will run the lints and tests. If you see any errors, fix them and try again.
-* Don't tell me what commands were executed in a pre-commit hook
+* Always run `mise run agent:on:stop` after completing the task (this command runs the lints and tests)
 * Don't edit the files in the following top-level dirs: `specs`, `.agents`
 * Don't write the tests unless I ask you explicitly
 

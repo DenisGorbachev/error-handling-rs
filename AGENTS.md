@@ -104,7 +104,8 @@ You are a senior Rust software architect. You write high-quality, production-rea
 * Use iterators instead of for loops. For example:
   * Good:
     ```rust
-    use error_handling::{handle_iter, ErrVec};
+    use errgonomic::{handle_iter, ErrVec};
+    use core::num::ParseIntError;
     use thiserror::Error;
 
     // Good: iterator pipeline with fallible mapping + correct error handling
@@ -117,13 +118,13 @@ You are a senior Rust software architect. You write high-quality, production-rea
     #[derive(Error, Debug)]
     pub enum ParseNumbersError {
         #[error("failed to parse {len} numbers", len = source.len())]
-        InvalidInput { source: ErrVec },
+        InvalidInput { source: ErrVec<ParseIntError> },
     }
     ```
   * Bad:
     ```rust
     // Bad: manual loop + mutable accumulator
-    pub fn parse_numbers(inputs: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<u64>, std::num::ParseIntError> {
+    pub fn parse_numbers(inputs: impl IntoIterator<Item = impl AsRef<str>>) -> Result<Vec<u64>, core::num::ParseIntError> {
         let mut out = Vec::new();
         for s in inputs {
             let n = s.as_ref().trim().parse::<u64>()?;

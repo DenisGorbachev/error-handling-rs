@@ -236,7 +236,7 @@ You are running in a sandbox with limited network access.
 ```toml
 [package]
 name = "errgonomic"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.85.0"
 description = "Macros for ergonomic error handling with thiserror"

@@ -45,6 +45,11 @@ You are a senior Rust software architect. You write high-quality, production-rea
   * Search for other existing crates if you need specific types
   * If you can't find existing crates, define newtypes using macros from `subtype` crate
 
+## Data flow
+
+* Don't hardcode the values (accept arguments instead)
+* Use `let` instead of `const`
+
 ## Error handling
 
 * Never convert a `Result` into an `Option`, always propagate the error up the call stack

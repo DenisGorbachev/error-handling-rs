@@ -120,8 +120,8 @@ const parts = (await Promise.all([
 const content = parts.join("\n\n")
 
 if (args.output) {
+  // The file must be writable by the `agent` user in the sandbox (not read-only)
   await Deno.writeTextFile(args.output, `${content}\n`)
-  await Deno.chmod(args.output, 0o444)
 } else {
   console.info(content)
 }

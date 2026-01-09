@@ -7,6 +7,7 @@
 * Use `handle_iter!` or `handle_iter_of_refs!` to collect and return errors from iterators
 * Note that macros that begin with `handle` already contain a `return` statement
 * Don't call `.clone()` on the variables passed into error handling macros (there is no need to clone the variables because the macros consume them only in the error branch). The macros do not consume the variables that are passed into them in the success branch. If you call a macro, you can always use the variables that are passed into the macro call in the subsequent code as if they haven't been moved (because they actually are not moved in the success branch, only in the error branch).
+* Don't convert a `Result` into an `Option`, always propagate the error up the call stack
 * Use `thiserror` to derive `Error`
 * Use `thiserror` version `2.0`
 * Do not annotate any error enum variant fields with a `#[from]` attribute
@@ -242,27 +243,6 @@ impl<'a, E: Error + ?Sized> Display for ErrorDisplayer<'a, E> {
 impl<'a, E: Error + ?Sized> From<&'a E> for ErrorDisplayer<'a, E> {
     fn from(error: &'a E) -> Self {
         Self(error)
-    }
-}
-````
-
-## File: src/functions.rs
-
-````rust
-mod get_root_error;
-mod partition_result;
-
-pub use get_root_error::*;
-pub use partition_result::*;
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "std")] {
-        mod writeln_error;
-        mod write_to_named_temp_file;
-        mod exit_result;
-        pub use writeln_error::*;
-        pub use write_to_named_temp_file::*;
-        pub use exit_result::*;
     }
 }
 ````
@@ -739,104 +719,23 @@ mod tests {
 }
 ````
 
-## File: src/types.rs
+## File: src/functions.rs
 
 ````rust
-mod debug_as_display;
-mod display_as_debug;
-mod item_error;
+mod get_root_error;
+mod partition_result;
 
-pub use debug_as_display::*;
-pub use display_as_debug::*;
-pub use item_error::*;
+pub use get_root_error::*;
+pub use partition_result::*;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
-        mod err_vec;
-        mod path_buf_display;
-        mod error_displayer;
-
-        pub use err_vec::*;
-        pub use path_buf_display::*;
-        pub use error_displayer::*;
-    }
-}
-````
-
-## File: src/types/err_vec.rs
-
-````rust
-use crate::ErrorDisplayer;
-use core::error::Error;
-use core::fmt::{Debug, Write};
-use core::fmt::{Display, Formatter};
-use core::ops::{Deref, DerefMut};
-
-/// An owned collection of errors
-#[derive(Default, Clone, Debug)]
-pub struct ErrVec<E: Error>(pub Vec<E>);
-
-impl<E: Error> ErrVec<E> {
-    pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
-        Self(iter.into_iter().collect())
-    }
-}
-
-impl<E: Error> Display for ErrVec<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "encountered {len} errors", len = self.len())?;
-        self.0.iter().try_for_each(|error| {
-            f.write_char('\n')?;
-            let recursive_displayer = ErrorDisplayer(error);
-            let string = format!("{recursive_displayer}");
-            let mut lines = string.lines();
-            let first_line_opt = lines.next();
-            if let Some(first_line) = first_line_opt {
-                write!(f, "  * {first_line}")?;
-                lines.try_for_each(|line| write!(f, "\n    {line}"))?;
-            }
-            Ok(())
-        })
-    }
-}
-
-impl<E: Error> Error for ErrVec<E> {}
-
-impl<E: Error> Deref for ErrVec<E> {
-    type Target = Vec<E>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<E: Error> DerefMut for ErrVec<E> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<E: Error> From<ErrVec<E>> for Vec<E> {
-    fn from(val: ErrVec<E>) -> Self {
-        val.0
-    }
-}
-
-impl<E: Error> From<Vec<E>> for ErrVec<E> {
-    fn from(inner: Vec<E>) -> Self {
-        Self(inner)
-    }
-}
-
-impl<E: Error + Clone, const N: usize> From<[E; N]> for ErrVec<E> {
-    fn from(inner: [E; N]) -> Self {
-        Self(inner.to_vec())
-    }
-}
-
-impl<E: Error + Clone> From<&[E]> for ErrVec<E> {
-    fn from(inner: &[E]) -> Self {
-        Self(inner.to_vec())
+        mod writeln_error;
+        mod write_to_named_temp_file;
+        mod exit_result;
+        pub use writeln_error::*;
+        pub use write_to_named_temp_file::*;
+        pub use exit_result::*;
     }
 }
 ````
@@ -1021,6 +920,108 @@ pub use types::*;
 mod functions;
 
 pub use functions::*;
+````
+
+## File: src/types.rs
+
+````rust
+mod debug_as_display;
+mod display_as_debug;
+mod item_error;
+
+pub use debug_as_display::*;
+pub use display_as_debug::*;
+pub use item_error::*;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "std")] {
+        mod err_vec;
+        mod path_buf_display;
+        mod error_displayer;
+
+        pub use err_vec::*;
+        pub use path_buf_display::*;
+        pub use error_displayer::*;
+    }
+}
+````
+
+## File: src/types/err_vec.rs
+
+````rust
+use crate::ErrorDisplayer;
+use core::error::Error;
+use core::fmt::{Debug, Write};
+use core::fmt::{Display, Formatter};
+use core::ops::{Deref, DerefMut};
+
+/// An owned collection of errors
+#[derive(Default, Clone, Debug)]
+pub struct ErrVec<E: Error>(pub Vec<E>);
+
+impl<E: Error> ErrVec<E> {
+    pub fn new(iter: impl IntoIterator<Item = E>) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
+impl<E: Error> Display for ErrVec<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "encountered {len} errors", len = self.len())?;
+        self.0.iter().try_for_each(|error| {
+            f.write_char('\n')?;
+            let recursive_displayer = ErrorDisplayer(error);
+            let string = format!("{recursive_displayer}");
+            let mut lines = string.lines();
+            let first_line_opt = lines.next();
+            if let Some(first_line) = first_line_opt {
+                write!(f, "  * {first_line}")?;
+                lines.try_for_each(|line| write!(f, "\n    {line}"))?;
+            }
+            Ok(())
+        })
+    }
+}
+
+impl<E: Error> Error for ErrVec<E> {}
+
+impl<E: Error> Deref for ErrVec<E> {
+    type Target = Vec<E>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<E: Error> DerefMut for ErrVec<E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<E: Error> From<ErrVec<E>> for Vec<E> {
+    fn from(val: ErrVec<E>) -> Self {
+        val.0
+    }
+}
+
+impl<E: Error> From<Vec<E>> for ErrVec<E> {
+    fn from(inner: Vec<E>) -> Self {
+        Self(inner)
+    }
+}
+
+impl<E: Error + Clone, const N: usize> From<[E; N]> for ErrVec<E> {
+    fn from(inner: [E; N]) -> Self {
+        Self(inner.to_vec())
+    }
+}
+
+impl<E: Error + Clone> From<&[E]> for ErrVec<E> {
+    fn from(inner: &[E]) -> Self {
+        Self(inner.to_vec())
+    }
+}
 ````
 
 ## File: src/functions/writeln_error.rs

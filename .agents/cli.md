@@ -42,29 +42,15 @@ fn verify_cli() {
 Example:
 
 ```rust
+use Subcommand::*;
 use errgonomic::map_err;
 use thiserror::Error;
-use Subcommand::*;
-
-mod print_command;
-
-pub use print_command::*;
 
 #[derive(clap::Parser, Debug)]
 #[command(author, version, about)]
 pub struct Command {
     #[command(subcommand)]
-    command: Subcommand,
-}
-
-impl Command {
-    pub async fn run(self) -> Result<(), CommandRunError> {
-        use CommandRunError::*;
-        let Self {
-            command,
-        } = self;
-        map_err!(command.run().await, SubcommandRunFailed)
-    }
+    subcommand: Subcommand,
 }
 
 #[derive(clap::Subcommand, Clone, Debug)]
@@ -72,10 +58,13 @@ pub enum Subcommand {
     Print(PrintCommand),
 }
 
-impl Subcommand {
-    pub async fn run(self) -> Result<(), SubcommandRunError> {
-        use SubcommandRunError::*;
-        match self {
+impl Command {
+    pub async fn run(self) -> Result<(), CommandRunError> {
+        use CommandRunError::*;
+        let Self {
+            subcommand,
+        } = self;
+        match subcommand {
             Print(command) => map_err!(command.run().await, PrintCommandRunFailed),
         }
     }
@@ -83,15 +72,13 @@ impl Subcommand {
 
 #[derive(Error, Debug)]
 pub enum CommandRunError {
-    #[error("failed to run command")]
-    SubcommandRunFailed { source: SubcommandRunError },
-}
-
-#[derive(Error, Debug)]
-pub enum SubcommandRunError {
     #[error("failed to run print command")]
     PrintCommandRunFailed { source: PrintCommandRunError },
 }
+
+mod print_command;
+
+pub use print_command::*;
 ```
 
 ## Definitions
@@ -106,12 +93,13 @@ A struct that contains fields for CLI arguments.
 - May contain a `subcommand` field annotated with `#[command(subcommand)]`
 - Must have a `pub async fn run`
   - Must return a `Result`
+  - If it contains a `subcommand` field: must match on `subcommand` and call `run` of each command
 
 Command example:
 
-- Shell command: `cargo run -- db download ycombinator-startups`
 - Name: `DbDownloadYcombinatorStartupsCommand`
 - File: `src/command/db_download_ycombinator_startups_command.rs` (attached to `src/command.rs`)
+- Shell command: `cargo run -- db download ycombinator-startups`
 
 ### Subcommand-like enum
 
@@ -120,13 +108,9 @@ An enum that contains variants for CLI subcommands.
 - Must have a name that is a reverse concatenation of all command names leading up to and including this command name, and ends with `Subcommand` (see example above)
 - Must derive `clap::Subcommand`
 - Must be located in the same file as its parent command struct
-- Each variant must be a tuple variant containing exactly one subcommand
-- Must have a `pub async fn run`
-  - Must match on `self` and call `run` on each subcommand
-  - Must return a `Result`
+- Each variant must be a tuple variant containing exactly one command
 
 Subcommand example:
 
-- Shell command: `cargo run -- db download`
-- Name: `DownloadDbSubcommand`
-- File: `src/cli/db_command/download_db_command.rs` (same file as its parent `DownloadDbCommand`)
+- Name: `DbDownloadSubcommand`
+- File: `src/cli/db_command/db_download_command.rs` (same file as its parent `DbDownloadCommand`)

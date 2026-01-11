@@ -129,12 +129,14 @@ file=$usage_file
 
 cp $dir/internal/AGENTS.md "$file"
 echo "" >> "$file"
+# `--no-git-sort-by-changes` stabilizes file order across invocations
 repomix \
     --include "src,tests,examples" \
     --ignore "src/drafts,src/**/fixtures/**" \
     --style markdown \
     --no-file-summary \
     --no-directory-structure \
+    --no-git-sort-by-changes \
     --stdout \
     {{arg(name="rest")}} \
     "$@" \

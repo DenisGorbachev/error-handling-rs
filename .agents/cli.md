@@ -4,6 +4,8 @@
 
 - `clap` (features: at least "derive", "env")
 - `tokio` (features: at least "macros", "rt", "rt-multi-thread")
+- `errgonomic`
+- `thiserror`
 
 ## File layout and required items
 
@@ -47,7 +49,7 @@ use errgonomic::map_err;
 use thiserror::Error;
 
 #[derive(clap::Parser, Debug)]
-#[command(author, version, about)]
+#[command(author, version, about, propagate_version = true)]
 pub struct Command {
     #[command(subcommand)]
     subcommand: Subcommand,
@@ -105,7 +107,7 @@ Command example:
 
 An enum that contains variants for CLI subcommands.
 
-- Must have a name that is a reverse concatenation of all command names leading up to and including this command name, and ends with `Subcommand` (see example above)
+- Must have a name that is a concatenation of all command names leading up to and including this command name, and ends with `Subcommand` (see example above)
 - Must derive `clap::Subcommand`
 - Must be located in the same file as its parent command struct
 - Each variant must be a tuple variant containing exactly one command

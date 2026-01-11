@@ -23,14 +23,17 @@ You are a senior Rust software architect. You write high-quality, production-rea
 
 ## Modules
 
-* When creating a new module, declare it with a `mod` statement followed by `pub use` glob statement. The parent module must re-export all items from the child modules. This allows to `use` the items right from the crate root, without intermediate module path. For example:
+* When creating a new module, attach it with a `mod` declaration followed by `pub use` glob declaration. The parent module must re-export all items from the child modules. This allows to `use` the items right from the crate root, without intermediate module path. For example:
   ```rust
+  fn foo() {}
+  
   mod my_module_name;
   pub use my_module_name::*;
   ```
+* Place the `mod` and `pub use` declarations at the end of the file (after the code items).
 * When importing items that are defined in the current crate, use direct import from crate root. For example:
   ```rust
-  use crate::MyItemName;
+  use crate::foo;
   ```
 
 ## Types
@@ -51,7 +54,19 @@ You are a senior Rust software architect. You write high-quality, production-rea
 ## Data flow
 
 * Don't hardcode the values (accept arguments instead)
-* Use `let` instead of `const`
+* Choose carefully between accepting a parameter VS defining a constant:
+  * Definitions:
+    * Parameters are execution details (the user may want to change them)
+    * Constants are implementation details (the user would never want to change them)
+  * Examples:
+    * Parameters:
+      * Cache TTL
+      * Config path
+    * Constants:
+      * Table name
+      * Keyspace name
+  * Recommendations:
+    * When in doubt, prefer accepting a parameter instead of defining a constant
 
 ## Struct derives
 

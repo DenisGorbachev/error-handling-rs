@@ -1,6 +1,34 @@
 # General design
 
-* Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed:
+* Some arguments that have been passed by value may already be unavailable when a specific fallible expression is executed
+* Some values may have already been destructured when a specific fallible expression is executed
+  * Examples
+    * Market
+      ```rust
+      struct MarketRaw {
+        slug: String,
+        question_id: String,
+      }
+      
+      struct Market {
+        slug: String,
+        question_id: QuestionId      
+      }
+      
+      impl TryFrom<MarketRaw> for Market {
+        type Error = ();
+      
+        fn try_from(market_raw: MarketRaw) -> Result<Self, Self::Error> {
+          let MarketRaw {
+            slug,
+            question_id    
+          } = market_raw;
+          // if an error occurs while converting question_id from String to QuestionId, the `market` will already be unavailable
+          // some other fields may have already been converted, too
+          todo!()
+        }
+      }
+      ```
 * Some public crates export types that keep the relevant fields private, so they can only be accessed via `Debug` trait (for example: `xshell::Cmd` has a private `sh: Shell` field, which contains `cwd: PathBuf`, which is relevant to the call)
 * Some public crates export types that have a `Debug` impl that doesn't explain the error (e.g. `toml_edit::Error` contains the whole TOML document and a span, so the user has to decipher the error by finding the relevant part of the document by the span)
 * Some types don't implement `Display`, but every error enum must implement `Display` (e.g. `PathBuf`)

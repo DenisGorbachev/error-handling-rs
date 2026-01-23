@@ -145,7 +145,7 @@ repomix \
 """
 
 [tasks."agent:docs:list"]
-run = "[ -d .agents/extra ] && find .agents/extra -type f -print || true"
+run = "[ -d .agents/docs ] && find .agents/docs -type f -print || true"
 quiet = true
 
 [tasks."agent:on:stop"]

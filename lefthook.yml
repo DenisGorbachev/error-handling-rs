@@ -13,6 +13,11 @@ pre-commit:
           # add README.md manually instead of using `stage_fixed` because it may not have been staged
           git add README.md
         fi
+    gen:docs:
+      run: |
+        mise run repomix DOCS.md
+        rumdl fmt DOCS.md
+        git add DOCS.md
     fix:
       run: mise run fix
       stage_fixed: true

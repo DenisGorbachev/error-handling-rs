@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/DenisGorbachev/errgonomic/compare/v0.4.0...v0.4.1) - 2026-01-24
+
+### Fixed
+
+- render error handling docs directly from the dependency
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- update errgonomic
+- AGENTS
+- bump deps
+- update errgonomic
+
+### Other
+
+- Merge remote-tracking branch 'repoconf-rust-public-lib-template/main'
+- Merge remote-tracking branch 'repoconf-rust-pre-public-lib-template/main'
+- Merge remote-tracking branch 'repoconf-rust-private-template/main'
+
 ## [0.3.0](https://github.com/DenisGorbachev/errgonomic/compare/v0.2.2...v0.3.0) - 2026-01-03
 
 ### Added

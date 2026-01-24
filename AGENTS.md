@@ -306,6 +306,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
 cfg-if = { version = "1" }
+futures = { version = "0.3.31", optional = true }
 tempfile = { version = "3", optional = true }
 thiserror = { version = "2", default-features = false }
 

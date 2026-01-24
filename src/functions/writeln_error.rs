@@ -58,7 +58,7 @@ pub enum WritelnErrorToWriterAndFileError {
 /// Writes an error trace to stderr and, if possible, includes a path to the full error report.
 pub fn eprintln_error<E>(error: &E)
 where
-    E: Error + 'static,
+    E: Error,
 {
     use WritelnErrorToWriterAndFileError::*;
     let mut stderr = stderr().lock();

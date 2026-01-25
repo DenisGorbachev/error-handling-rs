@@ -702,7 +702,7 @@ cfg_if::cfg_if! {
 //! * If Clippy outputs a `result_large_err` warning, then the large fields of the error enum must be wrapped in a `Box`
 //! * If the error enum variant has a `source` field, then this field must be the first field
 //! * The code must not use strings for error messages
-//! * The production code must not use `unwrap` or `expect` (only tests may use `unwrap` or `expect`)
+//! * The code must not use `unwrap` or `expect`
 //! * If each field of each variant of the error enum implements `Copy`, then the error enum must implement `Copy` too
 //! * If an argument of callee implements `Copy`, the callee must not include it in the list of error enum variant fields (the caller must include it because of the rule to include all relevant owned variables)
 //!

@@ -124,8 +124,7 @@ You are a senior Rust software architect. You write high-quality, production-rea
 
 ### Code style
 
-* Implement proper error handling instead of `unwrap` or `expect` in production code
-  * Use `unwrap` or `expect` in tests
+* Implement proper error handling instead of `unwrap` or `expect` (in normal code and in tests)
   * Use `expect` only in exceptional cases where you can prove that it always succeeds, and provide the proof as the first argument to `expect` (the proof must start with "always succeeds because")
 * The file names must match the names of the primary item in this file (for example: a file with `struct User` must be in `user.rs`)
 * Don't use `mod.rs`, use module files with submodules in the folder with the same name (for example: `user.rs` with submodules in `user` folder)
@@ -266,7 +265,7 @@ You are running in a sandbox with limited network access.
 ```toml
 [package]
 name = "errgonomic"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 rust-version = "1.85.0"
 description = "Macros for ergonomic error handling with thiserror"
@@ -397,7 +396,7 @@ std = ["tempfile", "thiserror/std"]
 //! # #[derive(Error, Debug)]
 //! # enum Err {}
 //! #
-//! # fn run() -> Result<(), Err> { Ok(()) }
+//! # fn run() -> Result<ExitCode, Err> { Ok(ExitCode::SUCCESS) }
 //! #
 //! pub fn main() -> ExitCode {
 //!     exit_result(run())

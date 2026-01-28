@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --no-lock
 
 import {parseArgs} from "jsr:@std/cli@1.0.13"
+import {compare, parse} from "jsr:@std/semver@1.0.0"
 import {stringify} from "jsr:@libs/xml@7.0.3"
 import remarkHeadingShift from "npm:remark-heading-shift@1.1.2"
 import remarkParse from "npm:remark-parse@11.0.0"
@@ -150,21 +151,33 @@ const loadCargoMetadata = (() => {
   }
 })()
 
+const parseSemVer = (value: string) => {
+  const parsed = parse(value)
+  if (!parsed) {
+    throw new Error(`invalid semver: '${value}'`)
+  }
+  return parsed
+}
+
 const includeCargoDependencyFile = async (dependencyName: string, path: string) => {
   const metadata = await loadCargoMetadata()
-  const resolve = metadata.resolve
-  if (!resolve?.root) {
-    throw new Error("cargo metadata did not include a resolve root")
-  }
-  const rootNode = resolve.nodes.find((node) => node.id === resolve.root)
-  if (!rootNode) {
-    throw new Error(`cargo metadata did not include the root node: '${resolve.root}'`)
-  }
-  const dependency = rootNode.deps.find((dep) => dep.name === dependencyName)
-  if (!dependency) {
+  const candidates = metadata.packages.filter((pkg) => pkg.name === dependencyName)
+  if (candidates.length === 0) {
     throw new Error(`cargo dependency not found: '${dependencyName}'`)
   }
-  const cargoPackage = metadata.packages.find((pkg) => pkg.id === dependency.pkg)
+  const cargoPackage = candidates.reduce((best, current) => {
+    if (!best) {
+      return current
+    }
+    const comparison = compare(parseSemVer(current.version), parseSemVer(best.version))
+    if (comparison > 0) {
+      return current
+    }
+    if (comparison === 0 && current.manifest_path > best.manifest_path) {
+      return current
+    }
+    return best
+  }, null as CargoPackage | null)
   if (!cargoPackage) {
     throw new Error(`cargo package not found for dependency: '${dependencyName}'`)
   }

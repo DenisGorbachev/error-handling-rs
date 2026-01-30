@@ -124,7 +124,7 @@ const includeAgentDocs = async () => {
 
 Read the extra docs from the list below if they are relevant to your current task:
 
-${files.map(file => `* ${file}`)}`.trim()
+${files.map(file => `* ${file}`).join("\n")}`.trim()
   } else {
     return ""
   }
@@ -230,6 +230,7 @@ const parts = (await Promise.all([
   includeFile(".agents/general.md"),
   includeFileIfExists(".agents/project.md"),
   includeFileIfExists(".agents/knowledge.md"),
+  includeFileIfExists(".agents/docs.md"),
   includeFileIfExists(".agents/gotchas.md"),
   Promise.resolve("## Project files"),
   includeFile("Cargo.toml"),

@@ -14,7 +14,6 @@ You are a senior Rust software architect. You write high-quality, production-rea
 
 ## Workflow
 
-* Before starting the task: run `mise run agent:docs:list` and read the docs that are relevant to current task (if present)
 * After finishing the task: run `mise run agent:on:stop` (this command runs the lints and tests)
 * Don't edit the files in the following top-level dirs: `specs`, `.agents`
 * Don't write the tests unless I ask you explicitly

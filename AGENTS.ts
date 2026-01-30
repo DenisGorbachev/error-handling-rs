@@ -7,7 +7,7 @@ import remarkHeadingShift from "npm:remark-heading-shift@1.1.2"
 import remarkParse from "npm:remark-parse@11.0.0"
 import remarkStringify from "npm:remark-stringify@11.0.0"
 import {unified} from "npm:unified@11.0.5"
-import {dirname, extname, join} from "jsr:@std/path@1.1.4"
+import {dirname, extname, fromFileUrl, join} from "jsr:@std/path@1.1.4"
 
 const args = parseArgs(Deno.args, {
   string: ["output"],
@@ -99,6 +99,35 @@ const renderFileContents = async (path: string, contents: string, pathToRender: 
     return await shiftHeadings(contents)
   }
   return renderCodeFile(pathToRender, contents)
+}
+
+const runAgentDocsList = async (): Promise<string[]> => {
+  const decoder = new TextDecoder()
+  const command = new Deno.Command("mise", {
+    args: ["run", "agent:docs:list"],
+    stdout: "piped",
+    stderr: "inherit",
+    cwd: fromFileUrl(rootUrl),
+  })
+  const output = await command.output()
+  const stdout = decoder.decode(output.stdout).trimEnd()
+  if (stdout.length === 0) {
+    return []
+  }
+  return stdout.split(/\r?\n/).filter((line) => line.length > 0)
+}
+
+const includeAgentDocs = async () => {
+  const files = await runAgentDocsList()
+  if (files.length) {
+    return `# Extra docs
+
+Read the extra docs from the list below if they are relevant to your current task:
+
+${files.map(file => `* ${file}`)}`.trim()
+  } else {
+    return ""
+  }
 }
 
 type CargoMetadata = {

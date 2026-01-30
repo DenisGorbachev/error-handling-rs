@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/DenisGorbachev/errgonomic/compare/v0.5.0...v0.5.1) - 2026-01-30
+
+### Fixed
+
+- don't include all agent docs
+- AGENTS
+- AGENTS
+- auto-resolve the docs
+- ExitCode cli guidance
+- add itertools
+- use latest version of package in includeCargoDependencyFile
+
 ## [0.4.1](https://github.com/DenisGorbachev/errgonomic/compare/v0.4.0...v0.4.1) - 2026-01-24
 
 ### Fixed
